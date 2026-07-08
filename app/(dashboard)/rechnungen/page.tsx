@@ -1,0 +1,247 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
+import { useData } from "@/contexts/DataContext";
+import RechnungForm from "@/components/RechnungForm";
+import PDFExport from "@/components/PDFExport";
+import EmailSender from "@/components/EmailSender";
+import StatusBadge from "@/components/StatusBadge";
+import WhatsAppSender from "@/components/WhatsAppSender";
+import { Plus, Search, Receipt, Euro, Calendar, User, CheckCircle, AlertTriangle, Send } from "lucide-react";
+import { formatCurrency, formatDate } from "@/lib/utils";
+import toast from "react-hot-toast";
+
+export default function RechnungenPage() {
+  const searchParams = useSearchParams();
+  const angebotId = searchParams.get("angebot") || undefined;
+  const { rechnungen, loading, updateRechnungStatus } = useData();
+  const [showForm, setShowForm] = useState(false);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("alle");
+  const [updating, setUpdating] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (angebotId) setShowForm(true);
+  }, [angebotId]);
+
+  const filtered = rechnungen.filter((r) => {
+    const matchesSearch =
+      r.betreff.toLowerCase().includes(search.toLowerCase()) ||
+      r.kunde?.firma.toLowerCase().includes(search.toLowerCase()) ||
+      r.nummer.toLowerCase().includes(search.toLowerCase());
+    const matchesStatus = statusFilter === "alle" || r.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
+  const statusOptions = [
+    { value: "alle", label: "Alle", count: rechnungen.length },
+    { value: "entwurf", label: "Entwurf", count: rechnungen.filter((r) => r.status === "entwurf").length },
+    { value: "versendet", label: "Versendet", count: rechnungen.filter((r) => r.status === "versendet").length },
+    { value: "bezahlt", label: "Bezahlt", count: rechnungen.filter((r) => r.status === "bezahlt").length },
+    { value: "ueberfaellig", label: "Überfällig", count: rechnungen.filter((r) => r.status === "ueberfaellig").length },
+  ];
+
+  const handleStatusChange = async (id: string, newStatus: string) => {
+    setUpdating(id);
+    const { error } = await updateRechnungStatus(id, newStatus);
+    if (error) {
+      toast.error("Fehler beim Aktualisieren");
+    } else {
+      toast.success(`Status auf "${newStatus}" geändert`);
+    }
+    setUpdating(null);
+  };
+
+  const totalOffen = rechnungen
+    .filter((r) => r.status === "versendet" || r.status === "ueberfaellig")
+    .reduce((sum, r) => sum + r.brutto, 0);
+
+  const totalBezahlt = rechnungen
+    .filter((r) => r.status === "bezahlt")
+    .reduce((sum, r) => sum + r.brutto, 0);
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-white">Rechnungen</h1>
+          <p className="text-dark-500 mt-1">
+            {rechnungen.length} Rechnungen • Offen: {formatCurrency(totalOffen)} • Bezahlt: {formatCurrency(totalBezahlt)}
+          </p>
+        </div>
+        <button onClick={() => setShowForm(true)} className="btn-primary">
+          <Plus className="w-5 h-5" />
+          Neue Rechnung
+        </button>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {statusOptions.slice(1).map((opt) => (
+          <button
+            key={opt.value}
+            onClick={() => setStatusFilter(statusFilter === opt.value ? "alle" : opt.value)}
+            className={`card text-left transition-all ${
+              statusFilter === opt.value ? "border-brand-500 ring-1 ring-brand-500/20" : ""
+            }`}
+          >
+            <p className="text-xs text-dark-500 uppercase font-medium">{opt.label}</p>
+            <p className="text-2xl font-bold text-white mt-1">{opt.count}</p>
+          </button>
+        ))}
+      </div>
+
+      {/* Search */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-dark-500" />
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Nach Betreff, Kunde oder Nummer suchen..."
+          className="input pl-10"
+        />
+      </div>
+
+      {/* Table */}
+      <div className="card overflow-hidden">
+        {loading ? (
+          <div className="p-12 text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-500 mx-auto"></div>
+            <p className="text-dark-500 mt-3">Lade Rechnungen...</p>
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="p-12 text-center">
+            <Receipt className="w-12 h-12 text-dark-700 mx-auto mb-3" />
+            <p className="text-dark-500">
+              {search || statusFilter !== "alle"
+                ? "Keine Rechnungen gefunden."
+                : "Noch keine Rechnungen. Erstelle deine erste Rechnung!"}
+            </p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-dark-900 border-b border-dark-800">
+                  <th className="text-left text-xs font-semibold text-dark-500 uppercase px-4 py-3">Nummer</th>
+                  <th className="text-left text-xs font-semibold text-dark-500 uppercase px-4 py-3">Kunde</th>
+                  <th className="text-left text-xs font-semibold text-dark-500 uppercase px-4 py-3">Betreff</th>
+                  <th className="text-right text-xs font-semibold text-dark-500 uppercase px-4 py-3">Betrag</th>
+                  <th className="text-left text-xs font-semibold text-dark-500 uppercase px-4 py-3">Fällig am</th>
+                  <th className="text-left text-xs font-semibold text-dark-500 uppercase px-4 py-3">Status</th>
+                  <th className="text-right text-xs font-semibold text-dark-500 uppercase px-4 py-3">Aktionen</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-dark-800">
+                {filtered.map((rechnung) => (
+                  <tr key={rechnung.id} className="hover:bg-dark-800/30 transition-colors">
+                    <td className="px-4 py-4">
+                      <div className="flex items-center gap-2">
+                        <Receipt className="w-4 h-4 text-green-400" />
+                        <span className="text-sm font-medium text-white">{rechnung.nummer}</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-4">
+                      <div className="flex items-center gap-2">
+                        <User className="w-3.5 h-3.5 text-dark-500" />
+                        <span className="text-sm text-dark-300">
+                          {rechnung.kunde?.firma || "Unbekannt"}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-4">
+                      <p className="text-sm text-dark-200 max-w-xs truncate">{rechnung.betreff}</p>
+                    </td>
+                    <td className="px-4 py-4 text-right">
+                      <p className="text-sm font-medium text-white">{formatCurrency(rechnung.brutto)}</p>
+                      <p className="text-xs text-dark-500">{formatCurrency(rechnung.netto)} netto</p>
+                    </td>
+                    <td className="px-4 py-4">
+                      <div className="flex items-center gap-1.5 text-sm text-dark-400">
+                        <Calendar className="w-3.5 h-3.5" />
+                        {formatDate(rechnung.faellig_am)}
+                      </div>
+                    </td>
+                    <td className="px-4 py-4">
+                      <StatusBadge status={rechnung.status} />
+                    </td>
+                    <td className="px-4 py-4 table-actions-cell">
+                      <div className="action-buttons-container">
+                        {/* PDF Export */}
+                        <PDFExport type="rechnung" data={rechnung} />
+
+                        {/* E-Mail Senden */}
+                        {rechnung.kunde?.email && (
+                          <EmailSender
+                            to={rechnung.kunde.email}
+                            kundenName={rechnung.kunde.ansprechpartner}
+                            type="rechnung"
+                            nummer={rechnung.nummer}
+                            betreff={rechnung.betreff}
+                            beschreibung={rechnung.betreff}
+                            brutto={rechnung.brutto}
+                          />
+                        )}
+
+                        <div className="relative z-20">
+                          <WhatsAppSender
+                            kundenName={rechnung.kunde?.ansprechpartner || ""}
+                            nummer={rechnung.nummer}
+                            betreff={rechnung.betreff}
+                            beschreibung={rechnung.betreff}
+                            brutto={rechnung.brutto}
+                          />
+                        </div>
+
+                        {rechnung.status === "entwurf" && (
+                          <button
+                            onClick={() => handleStatusChange(rechnung.id, "versendet")}
+                            disabled={updating === rechnung.id}
+                            className="p-2 text-dark-500 hover:text-brand-400 hover:bg-brand-500/10 rounded-lg transition-colors"
+                            title="Als versendet markieren"
+                          >
+                            <Send className="w-4 h-4" />
+                          </button>
+                        )}
+                        {rechnung.status === "versendet" && (
+                          <button
+                            onClick={() => handleStatusChange(rechnung.id, "bezahlt")}
+                            disabled={updating === rechnung.id}
+                            className="p-2 text-dark-500 hover:text-green-400 hover:bg-green-500/10 rounded-lg transition-colors"
+                            title="Als bezahlt markieren"
+                          >
+                            <CheckCircle className="w-4 h-4" />
+                          </button>
+                        )}
+                        {(rechnung.status === "versendet" || rechnung.status === "ueberfaellig") && (
+                          <button
+                            onClick={() => handleStatusChange(rechnung.id, "ueberfaellig")}
+                            disabled={updating === rechnung.id}
+                            className="p-2 text-dark-500 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                            title="Als überfällig markieren"
+                          >
+                            <AlertTriangle className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {showForm && (
+        <RechnungForm
+          angebotId={angebotId}
+          onClose={() => setShowForm(false)}
+        />
+      )}
+    </div>
+  );
+}
