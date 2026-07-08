@@ -83,9 +83,15 @@ export default function LandingPage() {
   const stats = [
     { value: "17+", label: "Stunden/Woche gespart" },
     { value: "3,7Mio", label: "Handwerker in Deutschland" },
-    { value: "149€", label: "ab Monat" },
+    { value: "35€", label: "ab Monat" },
     { value: "<30s", label: "für ein Angebot" },
   ];
+
+  const handleNotifyMe = (planName: string) => {
+    toast.success(
+      `${planName} ist noch in Entwicklung. Schreib uns an kontakt@meisterflow.de – wir informieren dich.`
+    );
+  };
 
   return (
     <div className="min-h-screen bg-dark-950">
@@ -250,15 +256,16 @@ export default function LandingPage() {
           <div className="text-center mb-16">
             <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">Einfache Preise</h2>
             <p className="text-dark-400 max-w-2xl mx-auto">
-              Keine versteckten Kosten. Kündige jederzeit.
+              Keine versteckten Kosten. Kündige jederzeit. Aktuell nur Starter verfügbar.
             </p>
           </div>
           <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
             {[
               {
                 name: "Starter",
-                price: "49",
+                price: "35",
                 desc: "Für Solo-Handwerker",
+                subtitle: "Alle Basis-Funktionen inklusive",
                 features: [
                   "KI-Angebote (unbegrenzt)",
                   "Auto-Rechnungen",
@@ -267,12 +274,13 @@ export default function LandingPage() {
                   "E-Mail-Versand",
                   "14 Tage kostenlos",
                 ],
-                cta: "Kostenlos testen",
-                popular: false,
+                cta: "Jetzt starten",
+                popular: true,
+                comingSoon: false,
               },
               {
                 name: "Professional",
-                price: "149",
+                price: "49",
                 desc: "Für kleine Betriebe",
                 features: [
                   "Alles aus Starter",
@@ -282,12 +290,13 @@ export default function LandingPage() {
                   "Steuer-Export (DATEV)",
                   "Bis 5 Mitarbeiter",
                 ],
-                cta: "Jetzt starten",
-                popular: true,
+                cta: "Notify Me",
+                popular: false,
+                comingSoon: true,
               },
               {
                 name: "Business",
-                price: "299",
+                price: "75",
                 desc: "Für wachsende Betriebe",
                 features: [
                   "Alles aus Professional",
@@ -297,8 +306,9 @@ export default function LandingPage() {
                   "API-Zugriff",
                   "Prioritäts-Support",
                 ],
-                cta: "Kontaktieren",
+                cta: "Notify Me",
                 popular: false,
+                comingSoon: true,
               },
             ].map((plan, i) => (
               <div
@@ -306,36 +316,61 @@ export default function LandingPage() {
                 className={`card relative ${
                   plan.popular
                     ? "border-brand-500 ring-1 ring-brand-500/20"
-                    : "border-dark-700"
+                    : plan.comingSoon
+                      ? "border-dark-700 opacity-90"
+                      : "border-dark-700"
                 }`}
               >
                 {plan.popular && (
                   <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                    <span className="badge badge-blue">Beliebt</span>
+                    <span className="badge badge-blue">Verfügbar</span>
+                  </div>
+                )}
+                {plan.comingSoon && (
+                  <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+                    <span className="badge bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                      COMING SOON
+                    </span>
                   </div>
                 )}
                 <div className="text-center mb-6">
                   <h3 className="text-lg font-semibold text-white">{plan.name}</h3>
                   <p className="text-dark-500 text-sm mt-1">{plan.desc}</p>
+                  {"subtitle" in plan && plan.subtitle && (
+                    <p className="text-brand-400 text-sm mt-2 font-medium">{plan.subtitle}</p>
+                  )}
                   <div className="mt-4">
-                    <span className="text-4xl font-bold text-white">{plan.price}€</span>
+                    <span className={`text-4xl font-bold ${plan.comingSoon ? "text-dark-300" : "text-white"}`}>
+                      {plan.price}€
+                    </span>
                     <span className="text-dark-500">/Monat</span>
                   </div>
+                  {plan.comingSoon && (
+                    <p className="text-dark-500 text-sm mt-3">
+                      Noch nicht verfügbar – wir arbeiten daran
+                    </p>
+                  )}
                 </div>
                 <ul className="space-y-3 mb-8">
                   {plan.features.map((feature, fi) => (
                     <li key={fi} className="flex items-start gap-2 text-sm text-dark-300">
-                      <CheckCircle2 className="w-4 h-4 text-green-400 mt-0.5 shrink-0" />
+                      <CheckCircle2 className={`w-4 h-4 mt-0.5 shrink-0 ${plan.comingSoon ? "text-dark-500" : "text-green-400"}`} />
                       {feature}
                     </li>
                   ))}
                 </ul>
                 <button
-                  onClick={() => { setShowAuth(true); setIsLogin(false); }}
+                  onClick={() =>
+                    plan.comingSoon
+                      ? handleNotifyMe(plan.name)
+                      : (() => { setShowAuth(true); setIsLogin(false); })()
+                  }
                   className={`w-full py-3 rounded-lg font-semibold transition-all ${
-                    plan.popular
-                      ? "bg-brand-600 hover:bg-brand-500 text-white"
-                      : "bg-dark-700 hover:bg-dark-600 text-dark-100"
+                    plan.comingSoon
+                      ? "bg-dark-700 hover:bg-dark-600 text-dark-200 border border-dark-600"
+                      : plan.popular
+                        ? "bg-brand-600 hover:bg-brand-500 text-white"
+                        : "bg-dark-700 hover:bg-dark-600 text-dark-100"
                   }`}
                 >
                   {plan.cta}
