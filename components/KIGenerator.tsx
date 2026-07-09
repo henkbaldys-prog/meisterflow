@@ -27,6 +27,7 @@ export default function KIGenerator({ onGenerated, kundenName = "", context = ""
       const response = await fetch("/api/ki", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({
           type: "angebot",
           beschreibung: prompt,

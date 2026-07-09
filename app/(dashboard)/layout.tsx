@@ -27,8 +27,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     <DataProvider>
       <div className="min-h-screen bg-dark-950">
         <Sidebar />
-        <main className="ml-64 min-h-screen">
-          <div className="p-6 lg:p-8">{children}</div>
+        <main className="md:ml-64 min-h-screen pt-16 md:pt-0">
+          <div className="p-4 md:p-6 lg:p-8">{children}</div>
         </main>
       </div>
     </DataProvider>

@@ -144,7 +144,7 @@ export default function RechnungForm({ onClose, onSuccess, angebotId }: Rechnung
             />
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="label flex items-center gap-1.5">
                 <Euro className="w-3.5 h-3.5" />
@@ -194,7 +194,7 @@ export default function RechnungForm({ onClose, onSuccess, angebotId }: Rechnung
             />
           </div>
 
-          <div className="flex gap-3 pt-4">
+          <div className="flex flex-col md:flex-row gap-3 pt-4">
             <button type="button" onClick={onClose} className="btn-secondary flex-1 justify-center">
               Abbrechen
             </button>

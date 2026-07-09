@@ -56,7 +56,7 @@ export default function KundenForm({ onClose, onSuccess }: KundenFormProps) {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="label flex items-center gap-1.5">
                 <Building2 className="w-3.5 h-3.5" />
@@ -87,7 +87,7 @@ export default function KundenForm({ onClose, onSuccess }: KundenFormProps) {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="label flex items-center gap-1.5">
                 <Mail className="w-3.5 h-3.5" />
@@ -132,7 +132,7 @@ export default function KundenForm({ onClose, onSuccess }: KundenFormProps) {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="label">PLZ</label>
               <input
@@ -157,7 +157,7 @@ export default function KundenForm({ onClose, onSuccess }: KundenFormProps) {
             </div>
           </div>
 
-          <div className="flex gap-3 pt-4">
+          <div className="flex flex-col md:flex-row gap-3 pt-4">
             <button type="button" onClick={onClose} className="btn-secondary flex-1 justify-center">
               Abbrechen
             </button>

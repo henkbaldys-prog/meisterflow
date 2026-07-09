@@ -154,18 +154,21 @@ export default function LandingPage() {
             MeisterFlow automatisiert Angebote, Rechnungen, Termine und Kundenkommunikation 
             mit KI. Spare 17+ Stunden pro Woche.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <button
               onClick={() => { setShowAuth(true); setIsLogin(false); }}
-              className="btn-primary text-lg px-8 py-4"
+              className="btn-primary text-lg px-8 py-4 w-full sm:w-auto shadow-lg shadow-brand-600/20"
             >
-              14 Tage kostenlos testen
+              Jetzt kostenlos testen
               <ArrowRight className="w-5 h-5" />
             </button>
-            <a href="#demo" className="btn-secondary text-lg px-8 py-4 justify-center">
+            <a href="#demo" className="btn-secondary text-lg px-8 py-4 justify-center w-full sm:w-auto">
               Demo ansehen
             </a>
           </div>
+          <p className="text-sm text-dark-500 mt-4">
+            Bereits von Handwerkern in Deutschland genutzt
+          </p>
 
           {/* Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-20 max-w-3xl mx-auto">
@@ -392,11 +395,14 @@ export default function LandingPage() {
           </p>
           <button
             onClick={() => { setShowAuth(true); setIsLogin(false); }}
-            className="btn-primary text-lg px-8 py-4"
+            className="btn-primary text-lg px-8 py-4 w-full sm:w-auto shadow-lg shadow-brand-600/20"
           >
-            Jetzt kostenlos starten
+            Jetzt kostenlos testen
             <ArrowRight className="w-5 h-5" />
           </button>
+          <p className="text-sm text-dark-500 mt-4">
+            Bereits von Handwerkern in Deutschland genutzt
+          </p>
         </div>
       </section>
 

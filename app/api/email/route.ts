@@ -1,10 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
+import { cookies } from "next/headers";
 
 export async function POST(req: NextRequest) {
+  const supabase = createRouteHandlerClient({ cookies });
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json({ error: "Nicht autorisiert" }, { status: 401 });
+  }
+
   try {
     const { to, subject, body, type, nummer } = await req.json();
 
-    // Validierung
     if (!to || !subject || !body) {
       return NextResponse.json(
         { error: "Empfänger, Betreff und Inhalt sind erforderlich" },
@@ -12,7 +22,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // E-Mail-Template erstellen
     const htmlBody = `
 <!DOCTYPE html>
 <html>
@@ -24,7 +33,6 @@ export async function POST(req: NextRequest) {
     .header { background: #2563eb; color: white; padding: 20px; text-align: center; }
     .content { background: #f8fafc; padding: 30px; margin: 20px 0; }
     .footer { text-align: center; color: #64748b; font-size: 12px; margin-top: 30px; }
-    .button { display: inline-block; background: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 20px 0; }
   </style>
 </head>
 <body>
@@ -34,7 +42,7 @@ export async function POST(req: NextRequest) {
       <p>Ihr Handwerksbetrieb</p>
     </div>
     <div class="content">
-      ${body.replace(/\n/g, '<br>')}
+      ${body.replace(/\n/g, "<br>")}
     </div>
     <div class="footer">
       <p>Diese E-Mail wurde automatisch von MeisterFlow versendet.</p>
@@ -56,21 +64,16 @@ export async function POST(req: NextRequest) {
       },
       sendOptions: [
         {
-          method: "Gmail SMTP (kostenlos)",
-          description: "Nutze dein Gmail-Konto als SMTP-Server",
-          setup: "Aktiviere 'Weniger sichere Apps' oder erstelle ein App-Passwort",
-          smtp: "smtp.gmail.com:587",
+          method: "Gmail öffnen",
+          description: "Öffnet Gmail mit vorausgefüllter E-Mail",
         },
         {
-          method: "Outlook SMTP (kostenlos)",
-          description: "Nutze dein Outlook/Hotmail-Konto",
-          setup: "Aktiviere SMTP in den Einstellungen",
-          smtp: "smtp-mail.outlook.com:587",
+          method: "Outlook öffnen",
+          description: "Öffnet Outlook mit vorausgefüllter E-Mail",
         },
         {
-          method: "Manuell kopieren",
-          description: "Kopiere den E-Mail-Text und sende ihn selbst",
-          setup: "Keine Einrichtung nötig",
+          method: "Direkt senden",
+          description: "Versand über MeisterFlow (Resend)",
         },
       ],
     });
