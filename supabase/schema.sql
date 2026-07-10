@@ -115,3 +115,33 @@ create index idx_rechnungen_user_id on rechnungen(user_id);
 create index idx_rechnungen_kunde_id on rechnungen(kunde_id);
 create index idx_termine_user_id on termine(user_id);
 create index idx_termine_datum on termine(datum);
+
+-- Firmenprofil-Tabelle
+create table if not exists firmenprofile (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users(id) on delete cascade not null unique,
+  firmenname text not null default 'Mein Betrieb',
+  logo_url text,
+  strasse text,
+  plz text,
+  ort text,
+  telefon text,
+  email text,
+  gewerke text[] default '{}',
+  stundenlohn decimal(10,2) default 45.00,
+  anfahrtspauschale decimal(10,2) default 25.00,
+  materialaufschlag_prozent integer default 15,
+  umsatzsteuer_prozent integer default 19,
+  zahlungsziel_tage integer default 14,
+  standard_angebotstext text default 'Wir bedanken uns für Ihre Anfrage und unterbreiten Ihnen hiermit unser Angebot.',
+  standard_mahnungstext text default 'Wir bitten höflich um Begleichung der offenen Forderung.',
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+alter table firmenprofile enable row level security;
+
+create policy "Users can only see/edit their own profile" on firmenprofile
+  for all using (auth.uid() = user_id);
+
+create index idx_firmenprofile_user_id on firmenprofile(user_id);

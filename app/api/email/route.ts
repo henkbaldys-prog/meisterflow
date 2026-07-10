@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
+import { checkRateLimit } from "@/lib/rate-limit";
+
+const rateLimits: Record<string, { count: number; resetAt: number }> = {};
 
 export async function POST(req: NextRequest) {
   const supabase = createRouteHandlerClient({ cookies });
@@ -10,6 +13,11 @@ export async function POST(req: NextRequest) {
 
   if (!user) {
     return NextResponse.json({ error: "Nicht autorisiert" }, { status: 401 });
+  }
+
+  const key = `${user.id}:email-preview`;
+  if (!checkRateLimit(rateLimits, key, 50)) {
+    return NextResponse.json({ error: "Rate limit überschritten" }, { status: 429 });
   }
 
   try {

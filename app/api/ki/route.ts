@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
-import { generateAngebot, generateEmailAntwort, generateWhatsAppAntwort } from "@/lib/openai";
+import { generateAngebot, generateEmailAntwort, generateWhatsAppAntwort, generateTagesuebersicht } from "@/lib/openai";
 import { checkRateLimit } from "@/lib/rate-limit";
 
 const rateLimits: Record<string, { count: number; resetAt: number }> = {};
@@ -22,7 +22,13 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { type, beschreibung, kundenName, context, emailInhalt, nachricht } = await req.json();
+    const { type, beschreibung, kundenName, context, emailInhalt, nachricht, zahlen, aeltesteOffeneAngebote, ueberfaelligeRechnungen } =
+      await req.json();
+
+    if (type === "tagesuebersicht") {
+      const text = await generateTagesuebersicht(zahlen || {}, aeltesteOffeneAngebote || [], ueberfaelligeRechnungen || []);
+      return NextResponse.json({ text });
+    }
 
     if (type === "angebot") {
       const text = await generateAngebot(beschreibung, kundenName);

@@ -41,3 +41,37 @@ export function calculateMwst(netto: number, mwstSatz: number = 19): number {
 export function calculateBrutto(netto: number, mwstSatz: number = 19): number {
   return netto + calculateMwst(netto, mwstSatz);
 }
+
+export function isToday(dateStr: string): boolean {
+  const d = new Date(dateStr);
+  const today = new Date();
+  return (
+    d.getFullYear() === today.getFullYear() &&
+    d.getMonth() === today.getMonth() &&
+    d.getDate() === today.getDate()
+  );
+}
+
+export function isWithinLast30Days(dateStr: string): boolean {
+  const d = new Date(dateStr);
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - 30);
+  return d >= cutoff;
+}
+
+export function daysSince(dateStr: string): number {
+  const d = new Date(dateStr);
+  const now = new Date();
+  return Math.floor((now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24));
+}
+
+export function getTimeGreeting(): string {
+  const hour = new Date().getHours();
+  if (hour < 12) return "Guten Morgen";
+  if (hour < 18) return "Guten Tag";
+  return "Guten Abend";
+}
+
+export function todayISO(): string {
+  return new Date().toISOString().split("T")[0];
+}

@@ -4,21 +4,37 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useData } from "@/contexts/DataContext";
 import AngebotForm from "@/components/AngebotForm";
+import SpracheZuAngebot from "@/components/SpracheZuAngebot";
+import FotoZuAngebot from "@/components/FotoZuAngebot";
 import PDFExport from "@/components/PDFExport";
 import EmailSender from "@/components/EmailSender";
 import StatusBadge from "@/components/StatusBadge";
 import WhatsAppSender from "@/components/WhatsAppSender";
-import { Plus, Search, FileText, Euro, Calendar, User, Send, CheckCircle, XCircle, Receipt } from "lucide-react";
+import { Plus, Search, FileText, Calendar, User, Send, CheckCircle, XCircle, Receipt } from "lucide-react";
 import { formatCurrency, formatDate } from "@/lib/utils";
+import { AngebotInitialData } from "@/types";
 import toast from "react-hot-toast";
 
 export default function AngebotePage() {
   const router = useRouter();
   const { angebote, loading, updateAngebotStatus } = useData();
   const [showForm, setShowForm] = useState(false);
+  const [showSprache, setShowSprache] = useState(false);
+  const [showFoto, setShowFoto] = useState(false);
+  const [formInitialData, setFormInitialData] = useState<AngebotInitialData | undefined>();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("alle");
   const [updating, setUpdating] = useState<string | null>(null);
+
+  const openManualForm = () => {
+    setFormInitialData(undefined);
+    setShowForm(true);
+  };
+
+  const openFormWithData = (data: AngebotInitialData) => {
+    setFormInitialData(data);
+    setShowForm(true);
+  };
 
   const filtered = angebote.filter((a) => {
     const matchesSearch =
@@ -61,9 +77,42 @@ export default function AngebotePage() {
             {angebote.length} Angebote • Gesamtwert: {formatCurrency(totalBrutto)}
           </p>
         </div>
-        <button onClick={() => setShowForm(true)} className="btn-primary">
+        <button onClick={openManualForm} className="btn-primary min-h-[48px]">
           <Plus className="w-5 h-5" />
           Neues Angebot
+        </button>
+      </div>
+
+      {/* KI-Erstellung */}
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <button
+          onClick={() => setShowSprache(true)}
+          className="card text-left transition-all hover:border-brand-500/40 hover:bg-dark-800/80 min-h-[120px] flex flex-col justify-center gap-2"
+        >
+          <div className="flex items-center gap-3">
+            <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-brand-600/20 text-2xl">
+              🎙️
+            </div>
+            <div>
+              <p className="font-semibold text-white">Per Sprache erstellen</p>
+              <p className="text-sm text-dark-500">Sprich dein Angebot – Whisper + KI</p>
+            </div>
+          </div>
+        </button>
+
+        <button
+          onClick={() => setShowFoto(true)}
+          className="card text-left transition-all hover:border-brand-500/40 hover:bg-dark-800/80 min-h-[120px] flex flex-col justify-center gap-2"
+        >
+          <div className="flex items-center gap-3">
+            <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-purple-600/20 text-2xl">
+              📷
+            </div>
+            <div>
+              <p className="font-semibold text-white">Per Foto erstellen</p>
+              <p className="text-sm text-dark-500">Baustellenfoto analysieren mit Vision-KI</p>
+            </div>
+          </div>
         </button>
       </div>
 
@@ -235,7 +284,24 @@ export default function AngebotePage() {
         )}
       </div>
 
-      {showForm && <AngebotForm onClose={() => setShowForm(false)} />}
+      {showForm && (
+        <AngebotForm
+          initialData={formInitialData}
+          onClose={() => {
+            setShowForm(false);
+            setFormInitialData(undefined);
+          }}
+        />
+      )}
+      {showSprache && (
+        <SpracheZuAngebot
+          onClose={() => setShowSprache(false)}
+          onAdopt={openFormWithData}
+        />
+      )}
+      {showFoto && (
+        <FotoZuAngebot onClose={() => setShowFoto(false)} onAdopt={openFormWithData} />
+      )}
     </div>
   );
 }

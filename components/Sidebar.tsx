@@ -15,6 +15,7 @@ import {
   ChevronRight,
   Menu,
   X,
+  Settings,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -24,6 +25,7 @@ const navItems = [
   { href: "/angebote", label: "Angebote", icon: FileText },
   { href: "/rechnungen", label: "Rechnungen", icon: Receipt },
   { href: "/termine", label: "Termine", icon: CalendarDays },
+  { href: "/einstellungen", label: "Einstellungen", icon: Settings },
 ];
 
 export default function Sidebar() {

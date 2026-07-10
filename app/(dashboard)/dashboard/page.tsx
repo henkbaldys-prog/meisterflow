@@ -1,193 +1,199 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { supabase } from "@/lib/supabase";
+import { useEffect, useMemo, useState } from "react";
+import { useData } from "@/contexts/DataContext";
 import StatCard from "@/components/StatCard";
 import StatusBadge from "@/components/StatusBadge";
 import {
   Users,
   FileText,
   Receipt,
-  TrendingUp,
+  CalendarDays,
+  Sparkles,
   AlertCircle,
-  Clock,
-  ArrowUpRight,
-  ArrowDownRight,
 } from "lucide-react";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { formatCurrency, formatDate, isToday, isWithinLast30Days, daysSince, getTimeGreeting, todayISO } from "@/lib/utils";
 import Link from "next/link";
 
 export default function DashboardPage() {
-  const [stats, setStats] = useState({
-    totalKunden: 0,
-    totalAngebote: 0,
-    totalRechnungen: 0,
-    offeneRechnungen: 0,
-    umsatzDieserMonat: 0,
-    angeboteDieserMonat: 0,
-  });
-  const [recentAngebote, setRecentAngebote] = useState<any[]>([]);
-  const [recentRechnungen, setRecentRechnungen] = useState<any[]>([]);
-  const [upcomingTermine, setUpcomingTermine] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { kunden, angebote, rechnungen, termine, firmenprofil, profilUnvollstaendig, loading } = useData();
+  const [kiHinweis, setKiHinweis] = useState<string | null>(null);
+  const [kiLoading, setKiLoading] = useState(false);
+
+  const stats = useMemo(() => {
+    const offeneAngebote = angebote.filter((a) => a.status === "entwurf").length;
+    const unbezahlteRechnungen = rechnungen.filter(
+      (r) => r.status === "versendet" || r.status === "ueberfaellig",
+    ).length;
+    const heutigeTermine = termine.filter((t) => isToday(t.datum)).length;
+    const neueKunden = kunden.filter((k) => isWithinLast30Days(k.created_at)).length;
+
+    return { offeneAngebote, unbezahlteRechnungen, heutigeTermine, neueKunden };
+  }, [angebote, rechnungen, termine, kunden]);
+
+  const aeltesteOffeneAngebote = useMemo(
+    () =>
+      angebote
+        .filter((a) => a.status === "entwurf")
+        .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+        .slice(0, 3)
+        .map((a) => ({
+          nummer: a.nummer,
+          betreff: a.betreff,
+          kunde: a.kunde?.firma || "Unbekannt",
+          tage_offen: daysSince(a.created_at),
+          brutto: a.brutto,
+        })),
+    [angebote],
+  );
+
+  const ueberfaelligeRechnungen = useMemo(() => {
+    const today = todayISO();
+    return rechnungen
+      .filter(
+        (r) =>
+          r.status === "ueberfaellig" ||
+          (r.status === "versendet" && r.faellig_am < today),
+      )
+      .slice(0, 5)
+      .map((r) => ({
+        nummer: r.nummer,
+        betreff: r.betreff,
+        kunde: r.kunde?.firma || "Unbekannt",
+        brutto: r.brutto,
+        faellig_am: r.faellig_am,
+        tage_ueberfaellig: daysSince(r.faellig_am),
+      }));
+  }, [rechnungen]);
+
+  const recentAngebote = useMemo(() => angebote.slice(0, 5), [angebote]);
+  const recentRechnungen = useMemo(() => rechnungen.slice(0, 5), [rechnungen]);
+  const upcomingTermine = useMemo(() => {
+    const today = todayISO();
+    return termine.filter((t) => t.datum >= today).slice(0, 5);
+  }, [termine]);
 
   useEffect(() => {
-    fetchDashboardData();
-  }, []);
+    if (loading) return;
 
-  const fetchDashboardData = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    const fetchKiHinweis = async () => {
+      setKiLoading(true);
+      try {
+        const res = await fetch("/api/ki", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            type: "tagesuebersicht",
+            zahlen: stats,
+            aeltesteOffeneAngebote,
+            ueberfaelligeRechnungen,
+          }),
+        });
+        const data = await res.json();
+        if (res.ok && data.text) {
+          setKiHinweis(data.text);
+        } else if (data.error?.includes("Rate limit")) {
+          setKiHinweis("KI-Limit erreicht – morgen gibt es wieder einen Tipp.");
+        } else {
+          setKiHinweis(null);
+        }
+      } catch {
+        setKiHinweis(null);
+      } finally {
+        setKiLoading(false);
+      }
+    };
 
-    const userId = user.id;
-    const startOfMonth = new Date();
-    startOfMonth.setDate(1);
-    startOfMonth.setHours(0, 0, 0, 0);
+    fetchKiHinweis();
+  }, [loading, stats, aeltesteOffeneAngebote, ueberfaelligeRechnungen]);
 
-    // Kunden
-    const { count: kundenCount } = await supabase
-      .from("kunden")
-      .select("*", { count: "exact", head: true })
-      .eq("user_id", userId);
-
-    // Angebote
-    const { count: angeboteCount } = await supabase
-      .from("angebote")
-      .select("*", { count: "exact", head: true })
-      .eq("user_id", userId);
-
-    const { count: angeboteThisMonth } = await supabase
-      .from("angebote")
-      .select("*", { count: "exact", head: true })
-      .eq("user_id", userId)
-      .gte("created_at", startOfMonth.toISOString());
-
-    // Rechnungen
-    const { count: rechnungenCount } = await supabase
-      .from("rechnungen")
-      .select("*", { count: "exact", head: true })
-      .eq("user_id", userId);
-
-    const { count: offeneRechnungenCount } = await supabase
-      .from("rechnungen")
-      .select("*", { count: "exact", head: true })
-      .eq("user_id", userId)
-      .in("status", ["versendet", "ueberfaellig"]);
-
-    const { data: umsatzData } = await supabase
-      .from("rechnungen")
-      .select("brutto")
-      .eq("user_id", userId)
-      .eq("status", "bezahlt")
-      .gte("created_at", startOfMonth.toISOString());
-
-    const umsatz = umsatzData?.reduce((sum, r) => sum + (r.brutto || 0), 0) || 0;
-
-    // Recent items
-    const { data: recentAngeboteData } = await supabase
-      .from("angebote")
-      .select("*, kunden(firma, ansprechpartner)")
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false })
-      .limit(5);
-
-    const { data: recentRechnungenData } = await supabase
-      .from("rechnungen")
-      .select("*, kunden(firma, ansprechpartner)")
-      .eq("user_id", userId)
-      .order("created_at", { ascending: false })
-      .limit(5);
-
-    const today = new Date().toISOString().split("T")[0];
-    const { data: termineData } = await supabase
-      .from("termine")
-      .select("*, kunden(firma, ansprechpartner)")
-      .eq("user_id", userId)
-      .gte("datum", today)
-      .order("datum", { ascending: true })
-      .limit(5);
-
-    setStats({
-      totalKunden: kundenCount || 0,
-      totalAngebote: angeboteCount || 0,
-      totalRechnungen: rechnungenCount || 0,
-      offeneRechnungen: offeneRechnungenCount || 0,
-      umsatzDieserMonat: umsatz,
-      angeboteDieserMonat: angeboteThisMonth || 0,
-    });
-
-    setRecentAngebote(recentAngeboteData || []);
-    setRecentRechnungen(recentRechnungenData || []);
-    setUpcomingTermine(termineData || []);
-    setLoading(false);
-  };
+  const greeting = getTimeGreeting();
+  const displayName = firmenprofil?.firmenname && !profilUnvollstaendig ? firmenprofil.firmenname : null;
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-500"></div>
+      <div className="flex h-96 items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-brand-500" />
       </div>
     );
   }
 
   return (
     <div className="space-y-8">
-      {/* Header */}
+      {/* Guten Morgen */}
       <div>
-        <h1 className="text-3xl font-bold text-white">Dashboard</h1>
-        <p className="text-dark-500 mt-1">Übersicht deines Handwerksbetriebs</p>
+        <h1 className="text-2xl font-bold text-white md:text-3xl">
+          {displayName ? `${greeting}, ${displayName}!` : `${greeting}!`}
+        </h1>
+        <p className="mt-1 text-dark-500">Übersicht deines Handwerksbetriebs</p>
+        {profilUnvollstaendig && (
+          <p className="mt-3 text-sm text-amber-300">
+            Bitte{" "}
+            <Link href="/einstellungen" className="font-medium underline hover:text-amber-200">
+              Firmenprofil vervollständigen
+            </Link>
+            , damit Angebote und Rechnungen mit deinen Daten erscheinen.
+          </p>
+        )}
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+      {/* KI-Hinweis */}
+      <div className="card border-brand-500/20 bg-brand-500/5">
+        <div className="flex items-start gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-brand-500/20 bg-brand-500/10">
+            <Sparkles className="h-5 w-5 text-brand-400" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-medium text-brand-300">KI-Tipp für heute</p>
+            {kiLoading ? (
+              <p className="mt-1 text-sm text-dark-400">Analysiere deine Zahlen...</p>
+            ) : kiHinweis ? (
+              <p className="mt-1 text-sm text-dark-200">{kiHinweis}</p>
+            ) : (
+              <p className="mt-1 text-sm text-dark-500">
+                Alles im grünen Bereich – oder KI gerade nicht erreichbar.
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Stats Grid – echte Zahlen */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
-          title="Kunden"
-          value={stats.totalKunden.toString()}
-          icon={Users}
-          color="blue"
-        />
-        <StatCard
-          title="Angebote"
-          value={stats.totalAngebote.toString()}
-          subtitle={`${stats.angeboteDieserMonat} diesen Monat`}
+          title="Offene Angebote"
+          value={stats.offeneAngebote.toString()}
+          subtitle="Status: Entwurf"
           icon={FileText}
           color="brand"
         />
         <StatCard
-          title="Rechnungen"
-          value={stats.totalRechnungen.toString()}
-          icon={Receipt}
-          color="green"
-        />
-        <StatCard
-          title="Offene Rechnungen"
-          value={stats.offeneRechnungen.toString()}
+          title="Unbezahlte Rechnungen"
+          value={stats.unbezahlteRechnungen.toString()}
+          subtitle="Versendet oder überfällig"
           icon={AlertCircle}
           color="red"
         />
         <StatCard
-          title="Umsatz (Monat)"
-          value={formatCurrency(stats.umsatzDieserMonat)}
-          icon={TrendingUp}
-          color="purple"
-          trend="+12%"
-          trendUp={true}
+          title="Heutige Termine"
+          value={stats.heutigeTermine.toString()}
+          subtitle="Für heute geplant"
+          icon={CalendarDays}
+          color="blue"
         />
         <StatCard
-          title="Konversionsrate"
-          value={stats.totalAngebote > 0 
-            ? `${Math.round((recentAngebote.filter((a: any) => a.status === "angenommen").length / stats.totalAngebote) * 100)}%` 
-            : "0%"}
-          icon={ArrowUpRight}
+          title="Neue Kunden"
+          value={stats.neueKunden.toString()}
+          subtitle="Letzte 30 Tage"
+          icon={Users}
           color="green"
         />
       </div>
 
       {/* Main Content Grid */}
-      <div className="grid lg:grid-cols-2 gap-6">
-        {/* Recent Angebote */}
+      <div className="grid gap-6 lg:grid-cols-2">
         <div className="card">
-          <div className="flex items-center justify-between mb-4">
+          <div className="mb-4 flex items-center justify-between">
             <h3 className="text-lg font-semibold text-white">Neueste Angebote</h3>
             <Link href="/angebote" className="text-sm text-brand-400 hover:text-brand-300">
               Alle anzeigen →
@@ -195,20 +201,20 @@ export default function DashboardPage() {
           </div>
           <div className="space-y-3">
             {recentAngebote.length === 0 ? (
-              <p className="text-dark-500 text-sm">Noch keine Angebote erstellt.</p>
+              <p className="text-sm text-dark-500">Noch keine Angebote erstellt.</p>
             ) : (
-              recentAngebote.map((angebot: any) => (
+              recentAngebote.map((angebot) => (
                 <div
                   key={angebot.id}
-                  className="flex items-center justify-between p-3 bg-dark-900 rounded-lg hover:bg-dark-800 transition-colors"
+                  className="flex items-center justify-between rounded-lg bg-dark-900 p-3 transition-colors hover:bg-dark-800"
                 >
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-white truncate">{angebot.betreff}</p>
+                    <p className="truncate text-sm font-medium text-white">{angebot.betreff}</p>
                     <p className="text-xs text-dark-500">
-                      {angebot.kunden?.firma || "Unbekannt"} • {formatDate(angebot.created_at)}
+                      {angebot.kunde?.firma || "Unbekannt"} • {formatDate(angebot.created_at)}
                     </p>
                   </div>
-                  <div className="flex items-center gap-3 shrink-0">
+                  <div className="flex shrink-0 items-center gap-3">
                     <span className="text-sm font-medium text-white">{formatCurrency(angebot.brutto)}</span>
                     <StatusBadge status={angebot.status} />
                   </div>
@@ -218,9 +224,8 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Recent Rechnungen */}
         <div className="card">
-          <div className="flex items-center justify-between mb-4">
+          <div className="mb-4 flex items-center justify-between">
             <h3 className="text-lg font-semibold text-white">Neueste Rechnungen</h3>
             <Link href="/rechnungen" className="text-sm text-brand-400 hover:text-brand-300">
               Alle anzeigen →
@@ -228,20 +233,20 @@ export default function DashboardPage() {
           </div>
           <div className="space-y-3">
             {recentRechnungen.length === 0 ? (
-              <p className="text-dark-500 text-sm">Noch keine Rechnungen erstellt.</p>
+              <p className="text-sm text-dark-500">Noch keine Rechnungen erstellt.</p>
             ) : (
-              recentRechnungen.map((rechnung: any) => (
+              recentRechnungen.map((rechnung) => (
                 <div
                   key={rechnung.id}
-                  className="flex items-center justify-between p-3 bg-dark-900 rounded-lg hover:bg-dark-800 transition-colors"
+                  className="flex items-center justify-between rounded-lg bg-dark-900 p-3 transition-colors hover:bg-dark-800"
                 >
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-white truncate">{rechnung.betreff}</p>
+                    <p className="truncate text-sm font-medium text-white">{rechnung.betreff}</p>
                     <p className="text-xs text-dark-500">
-                      {rechnung.kunden?.firma || "Unbekannt"} • Fällig: {formatDate(rechnung.faellig_am)}
+                      {rechnung.kunde?.firma || "Unbekannt"} • Fällig: {formatDate(rechnung.faellig_am)}
                     </p>
                   </div>
-                  <div className="flex items-center gap-3 shrink-0">
+                  <div className="flex shrink-0 items-center gap-3">
                     <span className="text-sm font-medium text-white">{formatCurrency(rechnung.brutto)}</span>
                     <StatusBadge status={rechnung.status} />
                   </div>
@@ -254,29 +259,28 @@ export default function DashboardPage() {
 
       {/* Upcoming Termine */}
       <div className="card">
-        <div className="flex items-center justify-between mb-4">
+        <div className="mb-4 flex items-center justify-between">
           <h3 className="text-lg font-semibold text-white">Kommende Termine</h3>
           <Link href="/termine" className="text-sm text-brand-400 hover:text-brand-300">
             Alle anzeigen →
           </Link>
         </div>
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {upcomingTermine.length === 0 ? (
-            <p className="text-dark-500 text-sm col-span-full">Keine anstehenden Termine.</p>
+            <p className="col-span-full text-sm text-dark-500">Keine anstehenden Termine.</p>
           ) : (
-            upcomingTermine.map((termin: any) => (
-              <div key={termin.id} className="p-4 bg-dark-900 rounded-lg border border-dark-700">
+            upcomingTermine.map((termin) => (
+              <div key={termin.id} className="rounded-lg border border-dark-700 bg-dark-900 p-4">
                 <div className="flex items-start justify-between">
                   <div>
                     <p className="font-medium text-white">{termin.titel}</p>
-                    <p className="text-xs text-dark-500 mt-1">
+                    <p className="mt-1 text-xs text-dark-500">
                       {formatDate(termin.datum)} • {termin.uhrzeit_von} – {termin.uhrzeit_bis}
                     </p>
-                    {termin.kunden && (
-                      <p className="text-xs text-brand-400 mt-1">
-                        {termin.kunden.firma}
-                      </p>
+                    {termin.kunde && (
+                      <p className="mt-1 text-xs text-brand-400">{termin.kunde.firma}</p>
                     )}
+                    {termin.ort && <p className="mt-1 text-xs text-dark-500">{termin.ort}</p>}
                   </div>
                   <StatusBadge status={termin.status} />
                 </div>

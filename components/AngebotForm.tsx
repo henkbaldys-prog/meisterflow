@@ -1,18 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useData } from "@/contexts/DataContext";
 import KIGenerator from "./KIGenerator";
 import { X, Plus, FileText, Euro, Calendar, User } from "lucide-react";
 import { formatCurrency, generateAngebotsNummer, calculateBrutto } from "@/lib/utils";
+import { defaultGueltigBis, findKundeIdByName } from "@/lib/angebot-initial";
+import { AngebotInitialData } from "@/types";
 import toast from "react-hot-toast";
 
 interface AngebotFormProps {
   onClose: () => void;
   onSuccess?: () => void;
+  initialData?: AngebotInitialData;
 }
 
-export default function AngebotForm({ onClose, onSuccess }: AngebotFormProps) {
+export default function AngebotForm({ onClose, onSuccess, initialData }: AngebotFormProps) {
   const { addAngebot, kunden } = useData();
   const [loading, setLoading] = useState(false);
   const [showKI, setShowKI] = useState(false);
@@ -22,8 +25,20 @@ export default function AngebotForm({ onClose, onSuccess }: AngebotFormProps) {
     beschreibung: "",
     netto: 0,
     mwst_satz: 19,
-    gueltig_bis: "",
+    gueltig_bis: defaultGueltigBis(),
   });
+
+  useEffect(() => {
+    if (!initialData) return;
+
+    const kundeId = findKundeIdByName(kunden, initialData.kunde_name);
+    setForm((prev) => ({
+      ...prev,
+      kunde_id: kundeId || prev.kunde_id,
+      betreff: initialData.betreff || initialData.leistung || prev.betreff,
+      beschreibung: initialData.beschreibung || prev.beschreibung,
+    }));
+  }, [initialData, kunden]);
 
   const selectedKunde = kunden.find((k) => k.id === form.kunde_id);
   const brutto = calculateBrutto(form.netto, form.mwst_satz);
@@ -56,9 +71,12 @@ export default function AngebotForm({ onClose, onSuccess }: AngebotFormProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="card w-full max-w-2xl relative max-h-[90vh] overflow-y-auto">
-        <button onClick={onClose} className="absolute top-4 right-4 text-dark-500 hover:text-white">
+    <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/60 backdrop-blur-sm p-0 md:p-4">
+      <div className="card w-full max-w-2xl relative max-h-[100dvh] md:max-h-[90vh] overflow-y-auto rounded-t-2xl md:rounded-xl">
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 text-dark-500 hover:text-white min-h-[48px] min-w-[48px] flex items-center justify-center"
+        >
           <X className="w-5 h-5" />
         </button>
 
@@ -68,14 +86,21 @@ export default function AngebotForm({ onClose, onSuccess }: AngebotFormProps) {
           </div>
           <div>
             <h2 className="text-xl font-bold text-white">Neues Angebot</h2>
-            <p className="text-sm text-dark-500">Erstelle ein professionelles Angebot</p>
+            <p className="text-sm text-dark-500">
+              {initialData ? "Vorausgefüllt aus KI – bitte prüfen" : "Erstelle ein professionelles Angebot"}
+            </p>
           </div>
         </div>
 
-        {/* KI Generator Toggle */}
+        {initialData && (
+          <div className="mb-4 rounded-lg border border-brand-500/20 bg-brand-500/5 px-4 py-3 text-sm text-brand-200">
+            Felder wurden aus Sprache/Foto übernommen. Bitte Kunde und Preis ergänzen.
+          </div>
+        )}
+
         <button
           onClick={() => setShowKI(!showKI)}
-          className="w-full mb-4 py-2 px-4 bg-brand-500/10 hover:bg-brand-500/20 border border-brand-500/20 rounded-lg text-brand-400 text-sm font-medium transition-colors flex items-center justify-center gap-2"
+          className="w-full mb-4 py-3 px-4 min-h-[48px] bg-brand-500/10 hover:bg-brand-500/20 border border-brand-500/20 rounded-lg text-brand-400 text-sm font-medium transition-colors flex items-center justify-center gap-2"
         >
           <FileText className="w-4 h-4" />
           {showKI ? "KI-Generator schließen" : "Mit KI generieren"}
@@ -99,7 +124,7 @@ export default function AngebotForm({ onClose, onSuccess }: AngebotFormProps) {
             <select
               value={form.kunde_id}
               onChange={(e) => setForm({ ...form, kunde_id: e.target.value })}
-              className="input"
+              className="input min-h-[48px]"
               required
             >
               <option value="">Kunde auswählen...</option>
@@ -117,7 +142,7 @@ export default function AngebotForm({ onClose, onSuccess }: AngebotFormProps) {
               type="text"
               value={form.betreff}
               onChange={(e) => setForm({ ...form, betreff: e.target.value })}
-              className="input"
+              className="input min-h-[48px]"
               placeholder="Angebot: Elektroinstallation EFH Musterstraße"
               required
             />
@@ -128,7 +153,7 @@ export default function AngebotForm({ onClose, onSuccess }: AngebotFormProps) {
             <textarea
               value={form.beschreibung}
               onChange={(e) => setForm({ ...form, beschreibung: e.target.value })}
-              className="input min-h-[120px] resize-none"
+              className="input min-h-[120px] resize-y"
               placeholder="Detaillierte Beschreibung der Leistungen..."
               required
             />
@@ -145,7 +170,7 @@ export default function AngebotForm({ onClose, onSuccess }: AngebotFormProps) {
                 step="0.01"
                 value={form.netto || ""}
                 onChange={(e) => setForm({ ...form, netto: parseFloat(e.target.value) || 0 })}
-                className="input"
+                className="input min-h-[48px]"
                 placeholder="0,00"
                 required
               />
@@ -155,7 +180,7 @@ export default function AngebotForm({ onClose, onSuccess }: AngebotFormProps) {
               <select
                 value={form.mwst_satz}
                 onChange={(e) => setForm({ ...form, mwst_satz: parseInt(e.target.value) })}
-                className="input"
+                className="input min-h-[48px]"
               >
                 <option value={19}>19%</option>
                 <option value={7}>7%</option>
@@ -164,7 +189,7 @@ export default function AngebotForm({ onClose, onSuccess }: AngebotFormProps) {
             </div>
             <div>
               <label className="label">Brutto</label>
-              <div className="input bg-dark-900 flex items-center text-dark-300">
+              <div className="input min-h-[48px] bg-dark-900 flex items-center text-dark-300">
                 {formatCurrency(brutto)}
               </div>
             </div>
@@ -179,16 +204,24 @@ export default function AngebotForm({ onClose, onSuccess }: AngebotFormProps) {
               type="date"
               value={form.gueltig_bis}
               onChange={(e) => setForm({ ...form, gueltig_bis: e.target.value })}
-              className="input"
+              className="input min-h-[48px]"
               required
             />
           </div>
 
           <div className="flex flex-col md:flex-row gap-3 pt-4">
-            <button type="button" onClick={onClose} className="btn-secondary flex-1 justify-center">
+            <button
+              type="button"
+              onClick={onClose}
+              className="btn-secondary flex-1 justify-center min-h-[48px]"
+            >
               Abbrechen
             </button>
-            <button type="submit" disabled={loading} className="btn-primary flex-1 justify-center">
+            <button
+              type="submit"
+              disabled={loading}
+              className="btn-primary flex-1 justify-center min-h-[48px]"
+            >
               {loading ? "Erstellen..." : "Angebot erstellen"}
             </button>
           </div>

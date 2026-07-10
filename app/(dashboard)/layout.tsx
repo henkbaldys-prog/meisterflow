@@ -3,6 +3,7 @@
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/components/Sidebar";
+import FirmenprofilBanner from "@/components/FirmenprofilBanner";
 import { useEffect } from "react";
 import { DataProvider } from "@/contexts/DataContext";
 
@@ -28,7 +29,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <div className="min-h-screen bg-dark-950">
         <Sidebar />
         <main className="md:ml-64 min-h-screen pt-16 md:pt-0">
-          <div className="p-4 md:p-6 lg:p-8">{children}</div>
+          <div className="p-4 md:p-6 lg:p-8">
+            <FirmenprofilBanner />
+            {children}
+          </div>
         </main>
       </div>
     </DataProvider>

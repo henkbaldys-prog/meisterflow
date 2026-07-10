@@ -1,19 +1,25 @@
 "use client";
 
-import { createContext, useContext, useState, useCallback, ReactNode, useEffect } from "react";
+import { createContext, useContext, useState, useCallback, ReactNode, useEffect, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
-import { Kunde, Angebot, Rechnung, Termin } from "@/types";
+import { Kunde, Angebot, Rechnung, Termin, Firmenprofil } from "@/types";
+
+export type FirmenprofilInput = Omit<Firmenprofil, "id" | "user_id" | "created_at" | "updated_at">;
 
 interface DataContextType {
   kunden: Kunde[];
   angebote: Angebot[];
   rechnungen: Rechnung[];
   termine: Termin[];
+  firmenprofil: Firmenprofil | null;
+  profilUnvollstaendig: boolean;
   loading: boolean;
   refreshKunden: () => Promise<void>;
   refreshAngebote: () => Promise<void>;
   refreshRechnungen: () => Promise<void>;
   refreshTermine: () => Promise<void>;
+  loadFirmenprofil: () => Promise<void>;
+  saveFirmenprofil: (data: FirmenprofilInput) => Promise<{ data: Firmenprofil | null; error: any }>;
   addKunde: (kunde: any) => Promise<{ data: any; error: any }>;
   addAngebot: (angebot: any) => Promise<{ data: any; error: any }>;
   addRechnung: (rechnung: any) => Promise<{ data: any; error: any }>;
@@ -31,15 +37,21 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [angebote, setAngebote] = useState<Angebot[]>([]);
   const [rechnungen, setRechnungen] = useState<Rechnung[]>([]);
   const [termine, setTermine] = useState<Termin[]>([]);
+  const [firmenprofil, setFirmenprofil] = useState<Firmenprofil | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const profilUnvollstaendig = useMemo(
+    () => !firmenprofil || firmenprofil.firmenname === "Mein Betrieb",
+    [firmenprofil],
+  );
+
   const refreshKunden = useCallback(async () => {
-    const { data, error } = await supabase.from("kunden").select("*").order("created_at", { ascending: false });
+    const { data } = await supabase.from("kunden").select("*").order("created_at", { ascending: false });
     if (data) setKunden(data as Kunde[]);
   }, []);
 
   const refreshAngebote = useCallback(async () => {
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from("angebote")
       .select("*, kunden(*)")
       .order("created_at", { ascending: false });
@@ -47,7 +59,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const refreshRechnungen = useCallback(async () => {
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from("rechnungen")
       .select("*, kunden(*)")
       .order("created_at", { ascending: false });
@@ -55,11 +67,51 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const refreshTermine = useCallback(async () => {
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from("termine")
       .select("*, kunden(*)")
       .order("datum", { ascending: true });
     if (data) setTermine(data.map((t: any) => ({ ...t, kunde: t.kunden })) as Termin[]);
+  }, []);
+
+  const loadFirmenprofil = useCallback(async () => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data, error } = await supabase
+      .from("firmenprofile")
+      .select("*")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (!error) {
+      setFirmenprofil(data ? (data as Firmenprofil) : null);
+    }
+  }, []);
+
+  const saveFirmenprofil = useCallback(async (data: FirmenprofilInput) => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return { data: null, error: new Error("Nicht eingeloggt") };
+
+    const { data: result, error } = await supabase
+      .from("firmenprofile")
+      .upsert(
+        {
+          ...data,
+          user_id: user.id,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "user_id" },
+      )
+      .select()
+      .single();
+
+    if (!error && result) setFirmenprofil(result as Firmenprofil);
+    return { data: result as Firmenprofil | null, error };
   }, []);
 
   const addKunde = useCallback(async (kunde: any) => {
@@ -148,12 +200,18 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    refreshKunden();
-    refreshAngebote();
-    refreshRechnungen();
-    refreshTermine();
-    setLoading(false);
-  }, [refreshKunden, refreshAngebote, refreshRechnungen, refreshTermine]);
+    const loadAll = async () => {
+      await Promise.all([
+        refreshKunden(),
+        refreshAngebote(),
+        refreshRechnungen(),
+        refreshTermine(),
+        loadFirmenprofil(),
+      ]);
+      setLoading(false);
+    };
+    loadAll();
+  }, [refreshKunden, refreshAngebote, refreshRechnungen, refreshTermine, loadFirmenprofil]);
 
   return (
     <DataContext.Provider
@@ -162,11 +220,15 @@ export function DataProvider({ children }: { children: ReactNode }) {
         angebote,
         rechnungen,
         termine,
+        firmenprofil,
+        profilUnvollstaendig,
         loading,
         refreshKunden,
         refreshAngebote,
         refreshRechnungen,
         refreshTermine,
+        loadFirmenprofil,
+        saveFirmenprofil,
         addKunde,
         addAngebot,
         addRechnung,
@@ -187,4 +249,3 @@ export function useData() {
   if (!context) throw new Error("useData muss innerhalb von DataProvider verwendet werden");
   return context;
 }
-

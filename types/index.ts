@@ -66,3 +66,55 @@ export interface DashboardStats {
   umsatzDieserMonat: number;
   angeboteDieserMonat: number;
 }
+
+export interface Firmenprofil {
+  id: string;
+  user_id: string;
+  firmenname: string;
+  logo_url?: string;
+  strasse?: string;
+  plz?: string;
+  ort?: string;
+  telefon?: string;
+  email?: string;
+  gewerke?: string[];
+  stundenlohn: number;
+  anfahrtspauschale: number;
+  materialaufschlag_prozent: number;
+  umsatzsteuer_prozent: number;
+  zahlungsziel_tage: number;
+  standard_angebotstext: string;
+  standard_mahnungstext: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AngebotInitialData {
+  kunde_name?: string | null;
+  leistung?: string;
+  material?: string;
+  menge?: string;
+  besonderheiten?: string | null;
+  geschätzte_dauer_stunden?: number | null;
+  betreff?: string;
+  beschreibung?: string;
+}
+
+export interface SpracheAngebotData {
+  kunde_name: string | null;
+  leistung: string;
+  material: string;
+  menge: string;
+  besonderheiten: string | null;
+  geschätzte_dauer_stunden: number | null;
+  zusammenfassung: string;
+}
+
+export interface FotoAngebotData {
+  beschreibung: string;
+  arbeiten: string[];
+  materialien: string[];
+  geschätzter_aufwand: string;
+  hinweis: string;
+  angebotsvorschlag: string;
+}
