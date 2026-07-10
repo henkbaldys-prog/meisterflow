@@ -43,7 +43,7 @@ export default function KundenForm({ onClose, onSuccess }: KundenFormProps) {
     });
 
     if (error) {
-      toast.error("Fehler beim Speichern");
+      toast.error(error.message || "Fehler beim Speichern");
     } else {
       toast.success("Kunde gespeichert!");
       onSuccess?.();

@@ -94,7 +94,7 @@ export default function AngebotForm({ onClose, onSuccess, initialData }: Angebot
     });
 
     if (error) {
-      toast.error("Fehler beim Anlegen des Kunden");
+      toast.error(error.message || "Fehler beim Anlegen des Kunden");
     } else if (data) {
       toast.success("Kunde angelegt!");
       setShowNewKunde(false);

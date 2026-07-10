@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, useCallback, ReactNode, useEffect, useMemo } from "react";
 import { supabase } from "@/lib/supabase";
 import { Kunde, Angebot, Rechnung, Termin, Firmenprofil } from "@/types";
+import { buildKundeInsertPayload } from "@/lib/kunde-utils";
 
 export type FirmenprofilInput = Omit<Firmenprofil, "id" | "user_id" | "created_at" | "updated_at">;
 
@@ -119,9 +120,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
       data: { user },
     } = await supabase.auth.getUser();
     if (!user) return { data: null, error: new Error("Nicht eingeloggt") };
+    const payload = buildKundeInsertPayload(kunde);
     const { data, error } = await supabase
       .from("kunden")
-      .insert([{ ...kunde, user_id: user.id }])
+      .insert([{ ...payload, user_id: user.id }])
       .select()
       .single();
     if (!error && data) setKunden((prev) => [data as Kunde, ...prev]);
