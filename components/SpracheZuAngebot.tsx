@@ -15,6 +15,17 @@ type Step = "idle" | "recording" | "processing" | "result";
 
 const MAX_SECONDS = 60;
 
+function getSupportedAudioMimeType(): string {
+  const types = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/ogg;codecs=opus"];
+  return types.find((type) => MediaRecorder.isTypeSupported(type)) || "";
+}
+
+function extensionForMime(mime: string): string {
+  if (mime.includes("mp4")) return "m4a";
+  if (mime.includes("ogg")) return "ogg";
+  return "webm";
+}
+
 export default function SpracheZuAngebot({ onClose, onAdopt }: SpracheZuAngebotProps) {
   const [step, setStep] = useState<Step>("idle");
   const [seconds, setSeconds] = useState(0);
@@ -43,14 +54,22 @@ export default function SpracheZuAngebot({ onClose, onAdopt }: SpracheZuAngebotP
     if (!recorder || recorder.state === "inactive") return;
 
     recorder.onstop = async () => {
+      const chunks = [...chunksRef.current];
+      const mimeType = recorder.mimeType || "audio/webm";
       cleanup();
-      setStep("processing");
 
-      const blob = new Blob(chunksRef.current, { type: recorder.mimeType || "audio/webm" });
+      const blob = new Blob(chunks, { type: mimeType });
+      if (blob.size === 0) {
+        setError("Aufnahme leer – bitte erneut versuchen und etwas länger sprechen.");
+        setStep("idle");
+        return;
+      }
+
+      setStep("processing");
 
       try {
         const formData = new FormData();
-        formData.append("audio", blob, "aufnahme.webm");
+        formData.append("audio", blob, `aufnahme.${extensionForMime(mimeType)}`);
 
         const res = await fetch("/api/ki/sprache", {
           method: "POST",
@@ -86,6 +105,9 @@ export default function SpracheZuAngebot({ onClose, onAdopt }: SpracheZuAngebotP
       }
     };
 
+    if (recorder.state === "recording") {
+      recorder.requestData();
+    }
     recorder.stop();
   }, [cleanup]);
 
@@ -99,11 +121,10 @@ export default function SpracheZuAngebot({ onClose, onAdopt }: SpracheZuAngebotP
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = stream;
 
-      const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
-        ? "audio/webm;codecs=opus"
-        : "audio/webm";
-
-      const recorder = new MediaRecorder(stream, { mimeType });
+      const mimeType = getSupportedAudioMimeType();
+      const recorder = mimeType
+        ? new MediaRecorder(stream, { mimeType })
+        : new MediaRecorder(stream);
       mediaRecorderRef.current = recorder;
       chunksRef.current = [];
 
@@ -111,7 +132,7 @@ export default function SpracheZuAngebot({ onClose, onAdopt }: SpracheZuAngebotP
         if (e.data.size > 0) chunksRef.current.push(e.data);
       };
 
-      recorder.start();
+      recorder.start(250);
       setStep("recording");
 
       timerRef.current = setInterval(() => {
