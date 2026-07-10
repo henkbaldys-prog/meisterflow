@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useData } from "@/contexts/DataContext";
 import { FirmenprofilInput } from "@/contexts/DataContext";
-import { Save, Building2, AlertCircle } from "lucide-react";
+import { Save, Building2, AlertCircle, ImagePlus, Loader2, Trash2 } from "lucide-react";
+import { supabase } from "@/lib/supabase";
+import { uploadFirmenLogo, removeFirmenLogo } from "@/lib/upload-logo";
 import toast from "react-hot-toast";
 
 const DEFAULTS: FirmenprofilInput = {
@@ -41,6 +43,9 @@ export default function EinstellungenPage() {
   const [form, setForm] = useState<FirmenprofilInput>(DEFAULTS);
   const [gewerkeText, setGewerkeText] = useState("");
   const [saving, setSaving] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [showLogoUrl, setShowLogoUrl] = useState(false);
+  const logoInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (firmenprofil) {
@@ -101,6 +106,51 @@ export default function EinstellungenPage() {
     setSaving(false);
   };
 
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      toast.error("Nicht eingeloggt");
+      return;
+    }
+
+    setUploadingLogo(true);
+    const { url, error } = await uploadFirmenLogo(file, user.id);
+    setUploadingLogo(false);
+
+    if (error || !url) {
+      toast.error(error?.message || "Logo-Upload fehlgeschlagen");
+      return;
+    }
+
+    updateField("logo_url", url);
+    toast.success("Logo hochgeladen – bitte Profil speichern");
+  };
+
+  const handleLogoRemove = async () => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return;
+
+    setUploadingLogo(true);
+    const { error } = await removeFirmenLogo(user.id);
+    setUploadingLogo(false);
+
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+
+    updateField("logo_url", "");
+    toast.success("Logo entfernt");
+  };
+
   if (loading) {
     return (
       <div className="flex h-96 items-center justify-center">
@@ -146,14 +196,77 @@ export default function EinstellungenPage() {
           </div>
 
           <div>
-            <label className="label">Logo-URL</label>
+            <label className="label">Firmenlogo (optional)</label>
+            <p className="mb-3 text-xs text-dark-500">
+              Erscheint später auf Angeboten und Rechnungen. JPG, PNG, WebP oder GIF, max. 2 MB.
+            </p>
+
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+              <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-dark-700 bg-dark-900">
+                {form.logo_url ? (
+                  <img
+                    src={form.logo_url}
+                    alt="Firmenlogo Vorschau"
+                    className="h-full w-full object-contain p-2"
+                  />
+                ) : (
+                  <Building2 className="h-10 w-10 text-dark-600" />
+                )}
+              </div>
+
+              <div className="flex flex-1 flex-col gap-2 sm:flex-row">
+                <button
+                  type="button"
+                  onClick={() => logoInputRef.current?.click()}
+                  disabled={uploadingLogo}
+                  className="btn-primary min-h-[48px] flex-1 justify-center"
+                >
+                  {uploadingLogo ? (
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  ) : (
+                    <ImagePlus className="h-5 w-5" />
+                  )}
+                  {form.logo_url ? "Logo ersetzen" : "Logo hochladen"}
+                </button>
+                {form.logo_url && (
+                  <button
+                    type="button"
+                    onClick={handleLogoRemove}
+                    disabled={uploadingLogo}
+                    className="btn-secondary min-h-[48px] flex-1 justify-center"
+                  >
+                    <Trash2 className="h-5 w-5" />
+                    Entfernen
+                  </button>
+                )}
+              </div>
+            </div>
+
             <input
-              type="url"
-              value={form.logo_url || ""}
-              onChange={(e) => updateField("logo_url", e.target.value)}
-              placeholder="https://..."
-              className="input min-h-[48px]"
+              ref={logoInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              className="hidden"
+              onChange={handleLogoUpload}
             />
+
+            <button
+              type="button"
+              onClick={() => setShowLogoUrl(!showLogoUrl)}
+              className="mt-3 text-sm text-dark-500 hover:text-brand-400"
+            >
+              {showLogoUrl ? "URL-Eingabe ausblenden" : "Oder Logo-URL manuell eingeben"}
+            </button>
+
+            {showLogoUrl && (
+              <input
+                type="url"
+                value={form.logo_url || ""}
+                onChange={(e) => updateField("logo_url", e.target.value)}
+                placeholder="https://..."
+                className="input mt-2 min-h-[48px]"
+              />
+            )}
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
