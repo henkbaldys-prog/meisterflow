@@ -10,6 +10,7 @@ import StatusBadge from "@/components/StatusBadge";
 import WhatsAppSender from "@/components/WhatsAppSender";
 import { Plus, Search, Receipt, Euro, Calendar, User, CheckCircle, AlertTriangle, Send } from "lucide-react";
 import { formatCurrency, formatDate } from "@/lib/utils";
+import { getKundeName } from "@/lib/kunde-utils";
 import toast from "react-hot-toast";
 
 export default function RechnungenPage() {
@@ -28,7 +29,7 @@ export default function RechnungenPage() {
   const filtered = rechnungen.filter((r) => {
     const matchesSearch =
       r.betreff.toLowerCase().includes(search.toLowerCase()) ||
-      r.kunde?.firma.toLowerCase().includes(search.toLowerCase()) ||
+      (r.kunde && getKundeName(r.kunde).toLowerCase().includes(search.toLowerCase())) ||
       r.nummer.toLowerCase().includes(search.toLowerCase());
     const matchesStatus = statusFilter === "alle" || r.status === statusFilter;
     return matchesSearch && matchesStatus;
@@ -148,7 +149,7 @@ export default function RechnungenPage() {
                       <div className="flex items-center gap-2">
                         <User className="w-3.5 h-3.5 text-dark-500" />
                         <span className="text-sm text-dark-300">
-                          {rechnung.kunde?.firma || "Unbekannt"}
+                          {rechnung.kunde ? getKundeName(rechnung.kunde) : "Unbekannt"}
                         </span>
                       </div>
                     </td>
@@ -177,7 +178,7 @@ export default function RechnungenPage() {
                         {rechnung.kunde?.email && (
                           <EmailSender
                             to={rechnung.kunde.email}
-                            kundenName={rechnung.kunde.ansprechpartner}
+                            kundenName={rechnung.kunde ? getKundeName(rechnung.kunde) : ""}
                             type="rechnung"
                             nummer={rechnung.nummer}
                             betreff={rechnung.betreff}
@@ -188,7 +189,7 @@ export default function RechnungenPage() {
 
                         <div className="relative z-20">
                           <WhatsAppSender
-                            kundenName={rechnung.kunde?.ansprechpartner || ""}
+                            kundenName={rechnung.kunde ? getKundeName(rechnung.kunde) : ""}
                             nummer={rechnung.nummer}
                             betreff={rechnung.betreff}
                             beschreibung={rechnung.betreff}

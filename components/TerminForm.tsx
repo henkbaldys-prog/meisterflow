@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useData } from "@/contexts/DataContext";
 import { X, Plus, CalendarDays, Clock, MapPin, User, FileText } from "lucide-react";
+import { getKundeLabel } from "@/lib/kunde-utils";
 import toast from "react-hot-toast";
 
 interface TerminFormProps {
@@ -96,7 +97,7 @@ export default function TerminForm({ onClose, onSuccess }: TerminFormProps) {
               <option value="">Kein Kunde</option>
               {kunden.map((k) => (
                 <option key={k.id} value={k.id}>
-                  {k.firma} – {k.ansprechpartner}
+                  {getKundeLabel(k)}
                 </option>
               ))}
             </select>

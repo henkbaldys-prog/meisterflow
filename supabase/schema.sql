@@ -1,16 +1,16 @@
 -- MeisterFlow Datenbank-Schema
 
--- Kunden-Tabelle
+-- Kunden-Tabelle (Name + Telefon reichen; Rest optional)
 create table kunden (
   id uuid default gen_random_uuid() primary key,
   created_at timestamp with time zone default now(),
-  firma text not null,
-  ansprechpartner text not null,
-  email text not null,
+  firma text,
+  ansprechpartner text,
+  email text,
   telefon text,
-  strasse text not null,
-  plz text not null,
-  ort text not null,
+  strasse text,
+  plz text,
+  ort text,
   user_id uuid references auth.users not null
 );
 

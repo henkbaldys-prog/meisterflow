@@ -1,13 +1,13 @@
 export interface Kunde {
   id: string;
   created_at: string;
-  firma: string;
-  ansprechpartner: string;
-  email: string;
-  telefon: string;
-  strasse: string;
-  plz: string;
-  ort: string;
+  firma: string | null;
+  ansprechpartner: string | null;
+  email: string | null;
+  telefon: string | null;
+  strasse: string | null;
+  plz: string | null;
+  ort: string | null;
   user_id: string;
 }
 

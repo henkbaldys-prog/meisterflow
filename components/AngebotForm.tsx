@@ -3,9 +3,10 @@
 import { useEffect, useState } from "react";
 import { useData } from "@/contexts/DataContext";
 import KIGenerator from "./KIGenerator";
-import { X, Plus, FileText, Euro, Calendar, User } from "lucide-react";
+import { X, Plus, FileText, Euro, Calendar, User, Phone } from "lucide-react";
 import { formatCurrency, generateAngebotsNummer, calculateBrutto } from "@/lib/utils";
 import { defaultGueltigBis, findKundeIdByName } from "@/lib/angebot-initial";
+import { getKundeLabel, getKundeName } from "@/lib/kunde-utils";
 import { AngebotInitialData } from "@/types";
 import toast from "react-hot-toast";
 
@@ -15,9 +16,14 @@ interface AngebotFormProps {
   initialData?: AngebotInitialData;
 }
 
+const NEW_KUNDE_VALUE = "__new__";
+
 export default function AngebotForm({ onClose, onSuccess, initialData }: AngebotFormProps) {
-  const { addAngebot, kunden } = useData();
+  const { addAngebot, addKunde, kunden } = useData();
   const [loading, setLoading] = useState(false);
+  const [creatingKunde, setCreatingKunde] = useState(false);
+  const [showNewKunde, setShowNewKunde] = useState(false);
+  const [newKunde, setNewKunde] = useState({ name: "", telefon: "" });
   const [showKI, setShowKI] = useState(false);
   const [form, setForm] = useState({
     kunde_id: "",
@@ -32,13 +38,71 @@ export default function AngebotForm({ onClose, onSuccess, initialData }: Angebot
     if (!initialData) return;
 
     const kundeId = findKundeIdByName(kunden, initialData.kunde_name);
-    setForm((prev) => ({
-      ...prev,
-      kunde_id: kundeId || prev.kunde_id,
-      betreff: initialData.betreff || initialData.leistung || prev.betreff,
-      beschreibung: initialData.beschreibung || prev.beschreibung,
-    }));
+    if (kundeId) {
+      setShowNewKunde(false);
+      setForm((prev) => ({
+        ...prev,
+        kunde_id: kundeId,
+        betreff: initialData.betreff || initialData.leistung || prev.betreff,
+        beschreibung: initialData.beschreibung || prev.beschreibung,
+      }));
+    } else if (initialData.kunde_name) {
+      setShowNewKunde(true);
+      setNewKunde((prev) => ({
+        ...prev,
+        name: initialData.kunde_name || prev.name,
+      }));
+      setForm((prev) => ({
+        ...prev,
+        betreff: initialData.betreff || initialData.leistung || prev.betreff,
+        beschreibung: initialData.beschreibung || prev.beschreibung,
+      }));
+    } else {
+      setForm((prev) => ({
+        ...prev,
+        betreff: initialData.betreff || initialData.leistung || prev.betreff,
+        beschreibung: initialData.beschreibung || prev.beschreibung,
+      }));
+    }
   }, [initialData, kunden]);
+
+  const canCreateKunde =
+    newKunde.name.trim().length > 0 && newKunde.telefon.trim().length > 0;
+
+  const handleKundeSelect = (value: string) => {
+    if (value === NEW_KUNDE_VALUE) {
+      setShowNewKunde(true);
+      setForm((prev) => ({ ...prev, kunde_id: "" }));
+      return;
+    }
+    setShowNewKunde(false);
+    setForm((prev) => ({ ...prev, kunde_id: value }));
+  };
+
+  const handleCreateKunde = async () => {
+    if (!canCreateKunde) return;
+
+    setCreatingKunde(true);
+    const { data, error } = await addKunde({
+      ansprechpartner: newKunde.name.trim(),
+      telefon: newKunde.telefon.trim(),
+      firma: null,
+      email: null,
+      strasse: null,
+      plz: null,
+      ort: null,
+    });
+
+    if (error) {
+      toast.error("Fehler beim Anlegen des Kunden");
+    } else if (data) {
+      toast.success("Kunde angelegt!");
+      setShowNewKunde(false);
+      setForm((prev) => ({ ...prev, kunde_id: data.id }));
+      setNewKunde({ name: "", telefon: "" });
+    }
+    setCreatingKunde(false);
+  };
 
   const selectedKunde = kunden.find((k) => k.id === form.kunde_id);
   const brutto = calculateBrutto(form.netto, form.mwst_satz);
@@ -110,7 +174,7 @@ export default function AngebotForm({ onClose, onSuccess, initialData }: Angebot
           <div className="mb-6">
             <KIGenerator
               onGenerated={handleKIGenerated}
-              kundenName={selectedKunde?.ansprechpartner || ""}
+              kundenName={selectedKunde ? getKundeName(selectedKunde) : ""}
             />
           </div>
         )}
@@ -122,18 +186,60 @@ export default function AngebotForm({ onClose, onSuccess, initialData }: Angebot
               Kunde
             </label>
             <select
-              value={form.kunde_id}
-              onChange={(e) => setForm({ ...form, kunde_id: e.target.value })}
+              value={showNewKunde ? NEW_KUNDE_VALUE : form.kunde_id}
+              onChange={(e) => handleKundeSelect(e.target.value)}
               className="input min-h-[48px]"
-              required
             >
               <option value="">Kunde auswählen...</option>
               {kunden.map((k) => (
                 <option key={k.id} value={k.id}>
-                  {k.firma} – {k.ansprechpartner}
+                  {getKundeLabel(k)}
                 </option>
               ))}
+              <option value={NEW_KUNDE_VALUE}>+ Neuer Kunde...</option>
             </select>
+
+            {showNewKunde && (
+              <div className="mt-3 space-y-3 rounded-lg border border-brand-500/20 bg-brand-500/5 p-4">
+                <p className="text-sm text-brand-200">Neuen Kunden direkt anlegen – ohne Seitenwechsel</p>
+                <div>
+                  <label className="label flex items-center gap-1.5 text-base">
+                    <User className="w-4 h-4" />
+                    Name *
+                  </label>
+                  <input
+                    type="text"
+                    value={newKunde.name}
+                    onChange={(e) => setNewKunde({ ...newKunde, name: e.target.value })}
+                    className="input min-h-[52px] w-full text-lg"
+                    placeholder="z.B. Max Müller"
+                    autoFocus
+                  />
+                </div>
+                <div>
+                  <label className="label flex items-center gap-1.5 text-base">
+                    <Phone className="w-4 h-4" />
+                    Telefon *
+                  </label>
+                  <input
+                    type="tel"
+                    value={newKunde.telefon}
+                    onChange={(e) => setNewKunde({ ...newKunde, telefon: e.target.value })}
+                    className="input min-h-[52px] w-full text-lg"
+                    placeholder="0176 1234567"
+                    inputMode="tel"
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={handleCreateKunde}
+                  disabled={creatingKunde || !canCreateKunde}
+                  className="btn-primary w-full justify-center min-h-[48px] disabled:opacity-40"
+                >
+                  {creatingKunde ? "Wird angelegt..." : "Kunde anlegen und übernehmen"}
+                </button>
+              </div>
+            )}
           </div>
 
           <div>

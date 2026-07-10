@@ -6,6 +6,7 @@ import TerminForm from "@/components/TerminForm";
 import StatusBadge from "@/components/StatusBadge";
 import { Plus, Search, CalendarDays, Clock, MapPin, User, CheckCircle, XCircle, Check } from "lucide-react";
 import { formatDate } from "@/lib/utils";
+import { getKundeName } from "@/lib/kunde-utils";
 import toast from "react-hot-toast";
 
 export default function TerminePage() {
@@ -18,8 +19,8 @@ export default function TerminePage() {
   const filtered = termine.filter((t) => {
     const matchesSearch =
       t.titel.toLowerCase().includes(search.toLowerCase()) ||
-      t.kunde?.firma.toLowerCase().includes(search.toLowerCase()) ||
-      t.ort.toLowerCase().includes(search.toLowerCase());
+      (t.kunde && getKundeName(t.kunde).toLowerCase().includes(search.toLowerCase())) ||
+      (t.ort?.toLowerCase() || "").includes(search.toLowerCase());
     const matchesStatus = statusFilter === "alle" || t.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
@@ -149,7 +150,7 @@ export default function TerminePage() {
                         {termin.kunde && (
                           <span className="flex items-center gap-1">
                             <User className="w-3.5 h-3.5" />
-                            {termin.kunde.firma}
+                            {termin.kunde ? getKundeName(termin.kunde) : ""}
                           </span>
                         )}
                       </div>

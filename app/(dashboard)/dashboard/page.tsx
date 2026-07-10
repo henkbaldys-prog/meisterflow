@@ -13,6 +13,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { formatCurrency, formatDate, isToday, isWithinLast30Days, daysSince, getTimeGreeting, todayISO } from "@/lib/utils";
+import { getKundeName } from "@/lib/kunde-utils";
 import Link from "next/link";
 
 export default function DashboardPage() {
@@ -40,7 +41,7 @@ export default function DashboardPage() {
         .map((a) => ({
           nummer: a.nummer,
           betreff: a.betreff,
-          kunde: a.kunde?.firma || "Unbekannt",
+          kunde: a.kunde ? getKundeName(a.kunde) : "Unbekannt",
           tage_offen: daysSince(a.created_at),
           brutto: a.brutto,
         })),
@@ -59,7 +60,7 @@ export default function DashboardPage() {
       .map((r) => ({
         nummer: r.nummer,
         betreff: r.betreff,
-        kunde: r.kunde?.firma || "Unbekannt",
+        kunde: r.kunde ? getKundeName(r.kunde) : "Unbekannt",
         brutto: r.brutto,
         faellig_am: r.faellig_am,
         tage_ueberfaellig: daysSince(r.faellig_am),
@@ -211,7 +212,7 @@ export default function DashboardPage() {
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium text-white">{angebot.betreff}</p>
                     <p className="text-xs text-dark-500">
-                      {angebot.kunde?.firma || "Unbekannt"} • {formatDate(angebot.created_at)}
+                      {angebot.kunde ? getKundeName(angebot.kunde) : "Unbekannt"} • {formatDate(angebot.created_at)}
                     </p>
                   </div>
                   <div className="flex shrink-0 items-center gap-3">
@@ -243,7 +244,7 @@ export default function DashboardPage() {
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium text-white">{rechnung.betreff}</p>
                     <p className="text-xs text-dark-500">
-                      {rechnung.kunde?.firma || "Unbekannt"} • Fällig: {formatDate(rechnung.faellig_am)}
+                      {rechnung.kunde ? getKundeName(rechnung.kunde) : "Unbekannt"} • Fällig: {formatDate(rechnung.faellig_am)}
                     </p>
                   </div>
                   <div className="flex shrink-0 items-center gap-3">
@@ -278,7 +279,7 @@ export default function DashboardPage() {
                       {formatDate(termin.datum)} • {termin.uhrzeit_von} – {termin.uhrzeit_bis}
                     </p>
                     {termin.kunde && (
-                      <p className="mt-1 text-xs text-brand-400">{termin.kunde.firma}</p>
+                      <p className="mt-1 text-xs text-brand-400">{getKundeName(termin.kunde)}</p>
                     )}
                     {termin.ort && <p className="mt-1 text-xs text-dark-500">{termin.ort}</p>}
                   </div>

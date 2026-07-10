@@ -38,17 +38,22 @@ export function fotoToInitialData(data: FotoAngebotData, angebotsvorschlag?: str
 }
 
 export function findKundeIdByName(
-  kunden: { id: string; firma: string; ansprechpartner: string }[],
+  kunden: { id: string; firma: string | null; ansprechpartner: string | null }[],
   name?: string | null,
 ): string {
   if (!name) return "";
   const lower = name.toLowerCase();
   const match = kunden.find(
-    (k) =>
-      k.firma.toLowerCase().includes(lower) ||
-      k.ansprechpartner.toLowerCase().includes(lower) ||
-      lower.includes(k.firma.toLowerCase()) ||
-      lower.includes(k.ansprechpartner.toLowerCase()),
+    (k) => {
+      const firma = k.firma?.toLowerCase() || "";
+      const name = k.ansprechpartner?.toLowerCase() || "";
+      return (
+        firma.includes(lower) ||
+        name.includes(lower) ||
+        lower.includes(firma) ||
+        lower.includes(name)
+      );
+    },
   );
   return match?.id || "";
 }

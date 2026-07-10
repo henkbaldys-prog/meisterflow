@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { FileText, Download, Loader2 } from "lucide-react";
+import { getKundeName, formatKundeAdresse } from "@/lib/kunde-utils";
+import { Kunde } from "@/types";
 import toast from "react-hot-toast";
 
 interface PDFExportProps {
@@ -14,14 +16,7 @@ interface PDFExportProps {
     mwst_satz: number;
     brutto: number;
     created_at: string;
-    kunde?: {
-      firma: string;
-      ansprechpartner: string;
-      strasse: string;
-      plz: string;
-      ort: string;
-      email: string;
-    };
+    kunde?: Kunde;
     gueltig_bis?: string;
     faellig_am?: string;
     status?: string;
@@ -87,10 +82,14 @@ export default function PDFExport({ type, data }: PDFExportProps) {
         doc.setFont("helvetica", "bold");
         doc.text("Kunde:", 125, 58);
         doc.setFont("helvetica", "normal");
-        doc.text(data.kunde.firma, 125, 64);
-        doc.text(data.kunde.ansprechpartner, 125, 69);
-        doc.text(data.kunde.strasse, 125, 74);
-        doc.text(`${data.kunde.plz} ${data.kunde.ort}`, 125, 79);
+        doc.text(getKundeName(data.kunde), 125, 64);
+        if (data.kunde.firma && data.kunde.firma !== data.kunde.ansprechpartner) {
+          doc.text(data.kunde.firma, 125, 69);
+        }
+        const adresse = formatKundeAdresse(data.kunde);
+        if (adresse) {
+          doc.text(adresse, 125, data.kunde.firma && data.kunde.firma !== data.kunde.ansprechpartner ? 74 : 69);
+        }
       }
 
       // Trennlinie

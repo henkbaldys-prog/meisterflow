@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useData } from "@/contexts/DataContext";
 import { X, Plus, Receipt, Euro, Calendar, User, FileText } from "lucide-react";
 import { formatCurrency, generateRechnungsNummer, calculateBrutto, formatDate } from "@/lib/utils";
+import { getKundeLabel } from "@/lib/kunde-utils";
 import toast from "react-hot-toast";
 import { addDays } from "date-fns";
 
@@ -89,7 +90,7 @@ export default function RechnungForm({ onClose, onSuccess, angebotId }: Rechnung
               <option value="">Kunde auswählen...</option>
               {kunden.map((k) => (
                 <option key={k.id} value={k.id}>
-                  {k.firma} – {k.ansprechpartner}
+                  {getKundeLabel(k)}
                 </option>
               ))}
             </select>

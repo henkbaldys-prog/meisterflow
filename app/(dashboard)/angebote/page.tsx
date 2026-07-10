@@ -11,6 +11,7 @@ import EmailSender from "@/components/EmailSender";
 import StatusBadge from "@/components/StatusBadge";
 import WhatsAppSender from "@/components/WhatsAppSender";
 import { Plus, Search, FileText, Calendar, User, Send, CheckCircle, XCircle, Receipt } from "lucide-react";
+import { getKundeName, getKundeLabel } from "@/lib/kunde-utils";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { AngebotInitialData } from "@/types";
 import toast from "react-hot-toast";
@@ -39,7 +40,7 @@ export default function AngebotePage() {
   const filtered = angebote.filter((a) => {
     const matchesSearch =
       a.betreff.toLowerCase().includes(search.toLowerCase()) ||
-      a.kunde?.firma.toLowerCase().includes(search.toLowerCase()) ||
+      (a.kunde && getKundeName(a.kunde).toLowerCase().includes(search.toLowerCase())) ||
       a.nummer.toLowerCase().includes(search.toLowerCase());
     const matchesStatus = statusFilter === "alle" || a.status === statusFilter;
     return matchesSearch && matchesStatus;
@@ -187,7 +188,7 @@ export default function AngebotePage() {
                       <div className="flex items-center gap-2">
                         <User className="w-3.5 h-3.5 text-dark-500" />
                         <span className="text-sm text-dark-300">
-                          {angebot.kunde?.firma || "Unbekannt"}
+                          {angebot.kunde ? getKundeName(angebot.kunde) : "Unbekannt"}
                         </span>
                       </div>
                     </td>
@@ -216,7 +217,7 @@ export default function AngebotePage() {
                         {angebot.kunde?.email && (
                           <EmailSender
                             to={angebot.kunde.email}
-                            kundenName={angebot.kunde.ansprechpartner}
+                            kundenName={angebot.kunde ? getKundeName(angebot.kunde) : ""}
                             type="angebot"
                             nummer={angebot.nummer}
                             betreff={angebot.betreff}
@@ -227,7 +228,7 @@ export default function AngebotePage() {
 
                         <div className="relative z-20">
                           <WhatsAppSender
-                            kundenName={angebot.kunde?.ansprechpartner || ""}
+                            kundenName={angebot.kunde ? getKundeName(angebot.kunde) : ""}
                             nummer={angebot.nummer}
                             betreff={angebot.betreff}
                             beschreibung={angebot.beschreibung}
