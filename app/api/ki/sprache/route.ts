@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
 import { cookies } from "next/headers";
 import { checkRateLimit } from "@/lib/rate-limit";
-import { extractSpracheAngebot, transcribeAudio } from "@/lib/openai";
+import { extractSpracheAngebot, extractSpracheTermin, transcribeAudio } from "@/lib/openai";
 
 const rateLimits: Record<string, { count: number; resetAt: number }> = {};
 
@@ -28,12 +28,15 @@ export async function POST(req: NextRequest) {
     let buffer: Buffer;
     let filename = "aufnahme.webm";
     let mimeType = "audio/webm";
+    let ziel = "angebot";
 
     const contentType = req.headers.get("content-type") || "";
 
     if (contentType.includes("multipart/form-data")) {
       const formData = await req.formData();
       const audio = formData.get("audio");
+      const zielParam = formData.get("ziel");
+      if (zielParam === "termin") ziel = "termin";
 
       if (!audio || !(audio instanceof Blob)) {
         return NextResponse.json({ error: "Keine Audiodatei erhalten" }, { status: 400 });
@@ -65,6 +68,7 @@ export async function POST(req: NextRequest) {
       buffer = Buffer.from(base64, "base64");
       mimeType = body.mimeType || mimeType;
       filename = body.filename || filename;
+      if (body.ziel === "termin") ziel = "termin";
     }
 
     if (!buffer || buffer.length < MIN_AUDIO_BYTES) {
@@ -90,7 +94,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const data = await extractSpracheAngebot(transcript);
+    const data =
+      ziel === "termin"
+        ? await extractSpracheTermin(transcript)
+        : await extractSpracheAngebot(transcript);
 
     return NextResponse.json({
       success: true,

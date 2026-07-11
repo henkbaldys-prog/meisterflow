@@ -159,36 +159,56 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Stats Grid – echte Zahlen */}
+      {/* Stats Grid – echte Zahlen, klickbar */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          title="Offene Angebote"
-          value={stats.offeneAngebote.toString()}
-          subtitle="Status: Entwurf"
-          icon={FileText}
-          color="brand"
-        />
-        <StatCard
-          title="Unbezahlte Rechnungen"
-          value={stats.unbezahlteRechnungen.toString()}
-          subtitle="Versendet oder überfällig"
-          icon={AlertCircle}
-          color="red"
-        />
-        <StatCard
-          title="Heutige Termine"
-          value={stats.heutigeTermine.toString()}
-          subtitle="Für heute geplant"
-          icon={CalendarDays}
-          color="blue"
-        />
-        <StatCard
-          title="Neue Kunden"
-          value={stats.neueKunden.toString()}
-          subtitle="Letzte 30 Tage"
-          icon={Users}
-          color="green"
-        />
+        <Link
+          href="/angebote?filter=offen"
+          className="block min-h-[48px] select-none touch-manipulation rounded-xl transition-transform hover:scale-[1.01] active:scale-[0.99] focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-500"
+        >
+          <StatCard
+            title="Offene Angebote"
+            value={stats.offeneAngebote.toString()}
+            subtitle="Status: Entwurf"
+            icon={FileText}
+            color="brand"
+          />
+        </Link>
+        <Link
+          href="/rechnungen?filter=unbezahlt"
+          className="block min-h-[48px] select-none touch-manipulation rounded-xl transition-transform hover:scale-[1.01] active:scale-[0.99] focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-500"
+        >
+          <StatCard
+            title="Unbezahlte Rechnungen"
+            value={stats.unbezahlteRechnungen.toString()}
+            subtitle="Versendet oder überfällig"
+            icon={AlertCircle}
+            color="red"
+          />
+        </Link>
+        <Link
+          href="/termine?filter=heute"
+          className="block min-h-[48px] select-none touch-manipulation rounded-xl transition-transform hover:scale-[1.01] active:scale-[0.99] focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-500"
+        >
+          <StatCard
+            title="Heutige Termine"
+            value={stats.heutigeTermine.toString()}
+            subtitle="Für heute geplant"
+            icon={CalendarDays}
+            color="blue"
+          />
+        </Link>
+        <Link
+          href="/kunden?filter=neu"
+          className="block min-h-[48px] select-none touch-manipulation rounded-xl transition-transform hover:scale-[1.01] active:scale-[0.99] focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-500"
+        >
+          <StatCard
+            title="Neue Kunden"
+            value={stats.neueKunden.toString()}
+            subtitle="Letzte 30 Tage"
+            icon={Users}
+            color="green"
+          />
+        </Link>
       </div>
 
       {/* Main Content Grid */}

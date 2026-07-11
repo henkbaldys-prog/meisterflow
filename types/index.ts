@@ -110,6 +110,27 @@ export interface SpracheAngebotData {
   zusammenfassung: string;
 }
 
+export interface SpracheTerminData {
+  kunde_name: string | null;
+  titel: string;
+  datum: string | null;
+  uhrzeit_von: string | null;
+  uhrzeit_bis: string | null;
+  ort: string | null;
+  notizen: string | null;
+  zusammenfassung: string;
+}
+
+export interface TerminInitialData {
+  kunde_name?: string | null;
+  titel?: string;
+  datum?: string;
+  uhrzeit_von?: string;
+  uhrzeit_bis?: string;
+  ort?: string;
+  beschreibung?: string;
+}
+
 export interface FotoAngebotData {
   beschreibung: string;
   arbeiten: string[];

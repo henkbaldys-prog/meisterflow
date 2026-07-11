@@ -26,12 +26,21 @@ export default function RechnungenPage() {
     if (angebotId) setShowForm(true);
   }, [angebotId]);
 
+  useEffect(() => {
+    const filter = searchParams.get("filter");
+    if (filter === "unbezahlt") setStatusFilter("unbezahlt");
+  }, [searchParams]);
+
   const filtered = rechnungen.filter((r) => {
     const matchesSearch =
       r.betreff.toLowerCase().includes(search.toLowerCase()) ||
       (r.kunde && getKundeName(r.kunde).toLowerCase().includes(search.toLowerCase())) ||
       r.nummer.toLowerCase().includes(search.toLowerCase());
-    const matchesStatus = statusFilter === "alle" || r.status === statusFilter;
+    const matchesStatus =
+      statusFilter === "alle" ||
+      (statusFilter === "unbezahlt"
+        ? r.status === "versendet" || r.status === "ueberfaellig"
+        : r.status === statusFilter);
     return matchesSearch && matchesStatus;
   });
 
@@ -77,6 +86,10 @@ export default function RechnungenPage() {
           Neue Rechnung
         </button>
       </div>
+
+      {statusFilter === "unbezahlt" && (
+        <p className="text-sm text-brand-400">Filter aktiv: Unbezahlte Rechnungen (Versendet & Überfällig)</p>
+      )}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

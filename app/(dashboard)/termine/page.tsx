@@ -1,20 +1,42 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useData } from "@/contexts/DataContext";
 import TerminForm from "@/components/TerminForm";
+import SpracheZuTermin from "@/components/SpracheZuTermin";
 import StatusBadge from "@/components/StatusBadge";
 import { Plus, Search, CalendarDays, Clock, MapPin, User, CheckCircle, XCircle, Check } from "lucide-react";
-import { formatDate } from "@/lib/utils";
+import { formatDate, isToday } from "@/lib/utils";
 import { getKundeName } from "@/lib/kunde-utils";
+import { TerminInitialData } from "@/types";
 import toast from "react-hot-toast";
 
 export default function TerminePage() {
+  const searchParams = useSearchParams();
   const { termine, loading, updateTerminStatus } = useData();
   const [showForm, setShowForm] = useState(false);
+  const [showSprache, setShowSprache] = useState(false);
+  const [formInitialData, setFormInitialData] = useState<TerminInitialData | undefined>();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("alle");
+  const [dateFilter, setDateFilter] = useState<string | null>(null);
   const [updating, setUpdating] = useState<string | null>(null);
+
+  const openManualForm = () => {
+    setFormInitialData(undefined);
+    setShowForm(true);
+  };
+
+  const openFormWithData = (data: TerminInitialData) => {
+    setFormInitialData(data);
+    setShowForm(true);
+  };
+
+  useEffect(() => {
+    const filter = searchParams.get("filter");
+    if (filter === "heute") setDateFilter("heute");
+  }, [searchParams]);
 
   const filtered = termine.filter((t) => {
     const matchesSearch =
@@ -22,7 +44,8 @@ export default function TerminePage() {
       (t.kunde && getKundeName(t.kunde).toLowerCase().includes(search.toLowerCase())) ||
       (t.ort?.toLowerCase() || "").includes(search.toLowerCase());
     const matchesStatus = statusFilter === "alle" || t.status === statusFilter;
-    return matchesSearch && matchesStatus;
+    const matchesDate = !dateFilter || (dateFilter === "heute" && isToday(t.datum));
+    return matchesSearch && matchesStatus && matchesDate;
   });
 
   const statusOptions = [
@@ -62,11 +85,48 @@ export default function TerminePage() {
           <h1 className="text-3xl font-bold text-white">Termine</h1>
           <p className="text-dark-500 mt-1">{termine.length} Termine insgesamt</p>
         </div>
-        <button onClick={() => setShowForm(true)} className="btn-primary">
+        <button onClick={openManualForm} className="btn-primary min-h-[48px]">
           <Plus className="w-5 h-5" />
           Neuer Termin
         </button>
       </div>
+
+      {/* Sprache / Manuell */}
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <button
+          onClick={() => setShowSprache(true)}
+          className="card text-left transition-all hover:border-brand-500/40 hover:bg-dark-800/80 min-h-[120px] flex flex-col justify-center gap-2 select-none touch-manipulation"
+        >
+          <div className="flex items-center gap-3">
+            <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-brand-600/20 text-2xl">
+              🎙️
+            </div>
+            <div>
+              <p className="font-semibold text-white">Per Sprache erstellen</p>
+              <p className="text-sm text-dark-500">Termin sprechen – Whisper + KI</p>
+            </div>
+          </div>
+        </button>
+
+        <button
+          onClick={openManualForm}
+          className="card text-left transition-all hover:border-brand-500/40 hover:bg-dark-800/80 min-h-[120px] flex flex-col justify-center gap-2 select-none touch-manipulation"
+        >
+          <div className="flex items-center gap-3">
+            <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-purple-600/20 text-2xl">
+              ✏️
+            </div>
+            <div>
+              <p className="font-semibold text-white">Manuell erstellen</p>
+              <p className="text-sm text-dark-500">Formular mit allen Feldern</p>
+            </div>
+          </div>
+        </button>
+      </div>
+
+      {dateFilter === "heute" && (
+        <p className="text-sm text-brand-400">Filter aktiv: Heutige Termine</p>
+      )}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -107,7 +167,7 @@ export default function TerminePage() {
           <div className="card p-12 text-center">
             <CalendarDays className="w-12 h-12 text-dark-700 mx-auto mb-3" />
             <p className="text-dark-500">
-              {search || statusFilter !== "alle"
+              {search || statusFilter !== "alle" || dateFilter
                 ? "Keine Termine gefunden."
                 : "Noch keine Termine. Plane deinen ersten Termin!"}
             </p>
@@ -195,7 +255,21 @@ export default function TerminePage() {
         )}
       </div>
 
-      {showForm && <TerminForm onClose={() => setShowForm(false)} />}
+      {showForm && (
+        <TerminForm
+          initialData={formInitialData}
+          onClose={() => {
+            setShowForm(false);
+            setFormInitialData(undefined);
+          }}
+        />
+      )}
+      {showSprache && (
+        <SpracheZuTermin
+          onClose={() => setShowSprache(false)}
+          onAdopt={openFormWithData}
+        />
+      )}
     </div>
   );
 }

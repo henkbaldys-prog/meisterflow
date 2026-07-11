@@ -1,6 +1,6 @@
 import OpenAI from "openai";
 import { toFile } from "openai/uploads";
-import { FotoAngebotData, SpracheAngebotData } from "@/types";
+import { FotoAngebotData, SpracheAngebotData, SpracheTerminData } from "@/types";
 
 const OPENAI_API_URL = "https://api.openai.com/v1/chat/completions";
 const OPENAI_MODEL = "gpt-4o-mini";
@@ -171,6 +171,27 @@ Antworte NUR als gültiges JSON. Kein Markdown, kein Code-Block.`;
 
   const raw = await createChatCompletion(prompt, 500, 0.2);
   return parseJsonFromLLM<SpracheAngebotData>(raw);
+}
+
+export async function extractSpracheTermin(transcript: string): Promise<SpracheTerminData> {
+  const today = new Date().toISOString().split("T")[0];
+  const prompt = `Du bist Handwerker-Assistent. Heute ist ${today}.
+Aus dieser Sprachnotiz extrahiere:
+- kunde_name (oder null)
+- titel (was ist der Termin?)
+- datum (ISO YYYY-MM-DD wenn erkennbar; "morgen", "heute" etc. in Datum umrechnen, sonst null)
+- uhrzeit_von (HH:MM 24h wenn genannt, sonst null)
+- uhrzeit_bis (HH:MM 24h wenn genannt, sonst null)
+- ort (wenn genannt, sonst null)
+- notizen (sonstige Infos oder null)
+- zusammenfassung (1 Satz für den Nutzer)
+
+Text: '${transcript.replace(/'/g, "''")}'
+
+Antworte NUR als gültiges JSON. Kein Markdown, kein Code-Block.`;
+
+  const raw = await createChatCompletion(prompt, 500, 0.2);
+  return parseJsonFromLLM<SpracheTerminData>(raw);
 }
 
 export async function analyzeBaustellenFoto(

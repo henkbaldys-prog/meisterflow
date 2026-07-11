@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useData } from "@/contexts/DataContext";
 import AngebotForm from "@/components/AngebotForm";
 import SpracheZuAngebot from "@/components/SpracheZuAngebot";
@@ -18,6 +18,7 @@ import toast from "react-hot-toast";
 
 export default function AngebotePage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { angebote, loading, updateAngebotStatus } = useData();
   const [showForm, setShowForm] = useState(false);
   const [showSprache, setShowSprache] = useState(false);
@@ -26,6 +27,11 @@ export default function AngebotePage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("alle");
   const [updating, setUpdating] = useState<string | null>(null);
+
+  useEffect(() => {
+    const filter = searchParams.get("filter");
+    if (filter === "offen") setStatusFilter("offen");
+  }, [searchParams]);
 
   const openManualForm = () => {
     setFormInitialData(undefined);
@@ -42,7 +48,11 @@ export default function AngebotePage() {
       a.betreff.toLowerCase().includes(search.toLowerCase()) ||
       (a.kunde && getKundeName(a.kunde).toLowerCase().includes(search.toLowerCase())) ||
       a.nummer.toLowerCase().includes(search.toLowerCase());
-    const matchesStatus = statusFilter === "alle" || a.status === statusFilter;
+    const matchesStatus =
+      statusFilter === "alle" ||
+      (statusFilter === "offen"
+        ? a.status === "entwurf" || a.status === "versendet"
+        : a.status === statusFilter);
     return matchesSearch && matchesStatus;
   });
 
@@ -116,6 +126,10 @@ export default function AngebotePage() {
           </div>
         </button>
       </div>
+
+      {statusFilter === "offen" && (
+        <p className="text-sm text-brand-400">Filter aktiv: Offene Angebote (Entwurf & Versendet)</p>
+      )}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
