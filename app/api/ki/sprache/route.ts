@@ -7,6 +7,7 @@ import { extractSpracheAngebot, transcribeAudio } from "@/lib/openai";
 const rateLimits: Record<string, { count: number; resetAt: number }> = {};
 
 const MAX_AUDIO_BYTES = 10 * 1024 * 1024;
+const MIN_AUDIO_BYTES = 1000;
 
 export async function POST(req: NextRequest) {
   const supabase = createRouteHandlerClient({ cookies });
@@ -38,6 +39,16 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Keine Audiodatei erhalten" }, { status: 400 });
       }
 
+      if (audio.size < MIN_AUDIO_BYTES) {
+        console.log("[ki/sprache] Audio zu klein:", audio.size, "bytes");
+        return NextResponse.json(
+          {
+            error: `Audiodatei zu kurz oder leer. Mindestens 3 Sekunden aufnehmen. Aufnahme war nur ${audio.size} Bytes. Auf iPhone/Safari: Länger sprechen oder Chrome nutzen.`,
+          },
+          { status: 400 },
+        );
+      }
+
       const arrayBuffer = await audio.arrayBuffer();
       buffer = Buffer.from(arrayBuffer);
       mimeType = audio.type || mimeType;
@@ -56,8 +67,14 @@ export async function POST(req: NextRequest) {
       filename = body.filename || filename;
     }
 
-    if (buffer.length === 0) {
-      return NextResponse.json({ error: "Audiodatei ist leer" }, { status: 400 });
+    if (!buffer || buffer.length < MIN_AUDIO_BYTES) {
+      console.log("[ki/sprache] Buffer zu klein:", buffer?.length ?? 0, "bytes");
+      return NextResponse.json(
+        {
+          error: `Audiodatei zu kurz oder leer. Mindestens 3 Sekunden aufnehmen. Aufnahme war nur ${buffer?.length ?? 0} Bytes. Auf iPhone/Safari: Länger sprechen oder Chrome nutzen.`,
+        },
+        { status: 400 },
+      );
     }
 
     if (buffer.length > MAX_AUDIO_BYTES) {

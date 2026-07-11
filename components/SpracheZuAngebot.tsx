@@ -14,10 +14,27 @@ interface SpracheZuAngebotProps {
 type Step = "idle" | "recording" | "processing" | "result";
 
 const MAX_SECONDS = 60;
+const MIN_BYTES = 1000;
+const MIN_RECORDING_SECONDS_UI = 3;
 
-function getSupportedAudioMimeType(): string {
-  const types = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/ogg;codecs=opus"];
-  return types.find((type) => MediaRecorder.isTypeSupported(type)) || "";
+function isIOS(): boolean {
+  if (typeof navigator === "undefined") return false;
+  return /iPad|iPhone|iPod/.test(navigator.userAgent);
+}
+
+function getMinRecordingMs(): number {
+  return isIOS() ? 5000 : 3000;
+}
+
+function getMinRecordingSeconds(): number {
+  return getMinRecordingMs() / 1000;
+}
+
+function getSupportedAudioMimeType(): string | null {
+  const types = ["audio/mp4", "audio/webm;codecs=opus", "audio/webm"];
+  const supported = types.find((type) => MediaRecorder.isTypeSupported(type)) || null;
+  console.log("[Sprache] MIME-Support:", supported, "iOS:", isIOS());
+  return supported;
 }
 
 function extensionForMime(mime: string): string {
@@ -26,17 +43,25 @@ function extensionForMime(mime: string): string {
   return "webm";
 }
 
+function sumChunkBytes(chunks: Blob[]): number {
+  return chunks.reduce((sum, chunk) => sum + chunk.size, 0);
+}
+
 export default function SpracheZuAngebot({ onClose, onAdopt }: SpracheZuAngebotProps) {
   const [step, setStep] = useState<Step>("idle");
   const [seconds, setSeconds] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [result, setResult] = useState<SpracheAngebotData | null>(null);
   const [transcript, setTranscript] = useState("");
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
+  const totalSizeRef = useRef(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+
+  const minRecordingSeconds = getMinRecordingSeconds();
 
   const cleanup = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current);
@@ -45,6 +70,7 @@ export default function SpracheZuAngebot({ onClose, onAdopt }: SpracheZuAngebotP
     streamRef.current = null;
     mediaRecorderRef.current = null;
     chunksRef.current = [];
+    totalSizeRef.current = 0;
   }, []);
 
   useEffect(() => () => cleanup(), [cleanup]);
@@ -53,86 +79,133 @@ export default function SpracheZuAngebot({ onClose, onAdopt }: SpracheZuAngebotP
     const recorder = mediaRecorderRef.current;
     if (!recorder || recorder.state === "inactive") return;
 
-    recorder.onstop = async () => {
-      const chunks = [...chunksRef.current];
-      const mimeType = recorder.mimeType || "audio/webm";
-      cleanup();
+    if (seconds < minRecordingSeconds) {
+      setError("Bitte mindestens 3 Sekunden sprechen");
+      return;
+    }
 
-      const blob = new Blob(chunks, { type: mimeType });
-      if (blob.size === 0) {
-        setError("Aufnahme leer – bitte erneut versuchen und etwas länger sprechen.");
-        setStep("idle");
-        return;
-      }
+    const mimeType = recorder.mimeType || "audio/mp4";
 
-      setStep("processing");
-
-      try {
-        const formData = new FormData();
-        formData.append("audio", blob, `aufnahme.${extensionForMime(mimeType)}`);
-
-        const res = await fetch("/api/ki/sprache", {
-          method: "POST",
-          body: formData,
-        });
-
-        const json = await res.json();
-
-        if (!res.ok) {
-          if (res.status === 422) {
-            setError("Sprache nicht erkannt – bitte deutlicher sprechen und nochmal versuchen.");
-          } else if (res.status === 429) {
-            setError("Limit erreicht (30/h). Bitte später erneut versuchen.");
-          } else if (!navigator.onLine) {
-            setError("Netzwerkfehler – bitte Internetverbindung prüfen.");
-          } else {
-            setError(json.error || "Verarbeitung fehlgeschlagen");
-          }
-          setStep("idle");
-          return;
-        }
-
-        setTranscript(json.transcript || "");
-        setResult(json.data);
-        setStep("result");
-      } catch {
-        setError(
-          navigator.onLine
-            ? "Netzwerkfehler – Server nicht erreichbar"
-            : "Netzwerkfehler – bitte Internetverbindung prüfen",
-        );
-        setStep("idle");
-      }
-    };
+    const waitForStop = new Promise<void>((resolve) => {
+      recorder.onstop = () => resolve();
+    });
 
     if (recorder.state === "recording") {
       recorder.requestData();
     }
     recorder.stop();
-  }, [cleanup]);
+
+    await waitForStop;
+    // Safari/iOS: finaler Chunk kommt manchmal knapp nach onstop
+    await new Promise((r) => setTimeout(r, 150));
+
+    const chunks = [...chunksRef.current];
+    const totalSize = sumChunkBytes(chunks);
+    console.log("[Sprache] onstop – chunks:", chunks.length, "totalSize:", totalSize, "seconds:", seconds);
+
+    cleanup();
+
+    if (totalSize < MIN_BYTES) {
+      setError(
+        "Aufnahme zu kurz oder leer. 💡 Tipp: Auf iPhone mindestens 5 Sekunden sprechen.",
+      );
+      setStep("idle");
+      return;
+    }
+
+    const blob = new Blob(chunks, { type: mimeType });
+    setSuccessMessage(`✅ Aufnahme erfolgreich (${seconds} Sekunden)`);
+    setStep("processing");
+
+    try {
+      const filename = `aufnahme.${extensionForMime(mimeType)}`;
+      const formData = new FormData();
+      formData.append("audio", new File([blob], filename, { type: mimeType || "audio/mp4" }));
+
+      console.log("[Sprache] Upload:", filename, blob.size, "bytes");
+
+      const res = await fetch("/api/ki/sprache", {
+        method: "POST",
+        body: formData,
+      });
+
+      const json = await res.json();
+
+      if (!res.ok) {
+        setSuccessMessage(null);
+        if (res.status === 422) {
+          setError("Sprache nicht erkannt – bitte deutlicher sprechen und nochmal versuchen.");
+        } else if (res.status === 429) {
+          setError("Limit erreicht (30/h). Bitte später erneut versuchen.");
+        } else if (res.status === 400) {
+          setError(json.error || "Audiodatei zu kurz oder leer. Mindestens 3 Sekunden aufnehmen.");
+        } else if (!navigator.onLine) {
+          setError("Netzwerkfehler – bitte Internetverbindung prüfen.");
+        } else {
+          setError(json.error || "Verarbeitung fehlgeschlagen");
+        }
+        setStep("idle");
+        return;
+      }
+
+      setTranscript(json.transcript || "");
+      setResult(json.data);
+      setSuccessMessage(null);
+      setStep("result");
+    } catch {
+      setSuccessMessage(null);
+      setError(
+        navigator.onLine
+          ? "Netzwerkfehler – Server nicht erreichbar"
+          : "Netzwerkfehler – bitte Internetverbindung prüfen",
+      );
+      setStep("idle");
+    }
+  }, [cleanup, minRecordingSeconds, seconds]);
 
   const startRecording = async () => {
     setError(null);
+    setSuccessMessage(null);
     setResult(null);
     setTranscript("");
     setSeconds(0);
 
+    const mimeType = getSupportedAudioMimeType();
+    if (!mimeType || typeof MediaRecorder === "undefined") {
+      setError("Browser nicht unterstützt – bitte Chrome nutzen.");
+      setStep("idle");
+      return;
+    }
+
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          sampleRate: 44100,
+        },
+      });
       streamRef.current = stream;
 
-      const mimeType = getSupportedAudioMimeType();
-      const recorder = mimeType
-        ? new MediaRecorder(stream, { mimeType })
-        : new MediaRecorder(stream);
+      const recorder = new MediaRecorder(stream, { mimeType });
       mediaRecorderRef.current = recorder;
       chunksRef.current = [];
+      totalSizeRef.current = 0;
 
       recorder.ondataavailable = (e) => {
-        if (e.data.size > 0) chunksRef.current.push(e.data);
+        if (e.data.size > 0) {
+          chunksRef.current.push(e.data);
+          totalSizeRef.current += e.data.size;
+          console.log("[Sprache] chunk:", e.data.size, "total:", totalSizeRef.current);
+        }
       };
 
-      recorder.start(250);
+      // iOS/Safari: Timeslices liefern oft 0 Bytes – ein Blob beim Stop ist zuverlässiger
+      if (isIOS()) {
+        recorder.start();
+      } else {
+        recorder.start(1000);
+      }
       setStep("recording");
 
       timerRef.current = setInterval(() => {
@@ -154,6 +227,7 @@ export default function SpracheZuAngebot({ onClose, onAdopt }: SpracheZuAngebotP
   const reset = () => {
     setStep("idle");
     setError(null);
+    setSuccessMessage(null);
     setResult(null);
     setTranscript("");
     setSeconds(0);
@@ -171,6 +245,8 @@ export default function SpracheZuAngebot({ onClose, onAdopt }: SpracheZuAngebotP
     const sec = s % 60;
     return `${m}:${sec.toString().padStart(2, "0")}`;
   };
+
+  const canStop = seconds >= minRecordingSeconds;
 
   return (
     <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/60 backdrop-blur-sm p-0 md:p-4">
@@ -194,10 +270,21 @@ export default function SpracheZuAngebot({ onClose, onAdopt }: SpracheZuAngebotP
           </div>
         )}
 
+        {successMessage && (
+          <div className="mb-4 rounded-lg border border-green-500/30 bg-green-500/10 px-4 py-3 text-sm text-green-300">
+            {successMessage}
+          </div>
+        )}
+
         {(step === "idle" || step === "recording") && (
           <div className="flex flex-col items-center py-6">
             {step === "recording" && (
-              <p className="mb-4 text-2xl font-mono font-bold text-brand-400">{formatTime(seconds)}</p>
+              <>
+                <p className="mb-2 text-sm font-medium text-brand-300">
+                  🎙️ Aufnahme läuft... (mindestens {MIN_RECORDING_SECONDS_UI} Sekunden)
+                </p>
+                <p className="mb-4 text-2xl font-mono font-bold text-brand-400">{formatTime(seconds)}</p>
+              </>
             )}
 
             {step === "idle" ? (
@@ -210,18 +297,25 @@ export default function SpracheZuAngebot({ onClose, onAdopt }: SpracheZuAngebotP
               </button>
             ) : (
               <button
-                onClick={stopRecording}
-                className="flex h-20 w-20 items-center justify-center rounded-2xl bg-red-600 text-white shadow-lg shadow-red-600/30 transition-transform hover:scale-105 active:scale-95 min-h-[80px] min-w-[80px]"
-                aria-label="Aufnahme stoppen"
+                onClick={canStop ? stopRecording : undefined}
+                disabled={!canStop}
+                className={`flex h-20 w-20 items-center justify-center rounded-2xl text-white shadow-lg min-h-[80px] min-w-[80px] transition-transform ${
+                  canStop
+                    ? "bg-red-600 shadow-red-600/30 hover:scale-105 active:scale-95 cursor-pointer"
+                    : "bg-dark-700 shadow-none opacity-50 cursor-not-allowed"
+                }`}
+                aria-label={canStop ? "Aufnahme stoppen" : "Noch nicht stoppen – mindestens 3 Sekunden sprechen"}
               >
-                <Square className="h-8 w-8 fill-current" />
+                <Square className={`h-8 w-8 fill-current ${canStop ? "" : "opacity-60"}`} />
               </button>
             )}
 
-            <p className="mt-4 text-sm text-dark-500">
+            <p className="mt-4 text-sm text-dark-500 text-center px-4">
               {step === "idle"
-                ? "Tippe zum Starten (max. 60 Sekunden)"
-                : "Tippe zum Stoppen und Verarbeiten"}
+                ? `Tippe zum Starten (max. 60 Sekunden, mind. ${MIN_RECORDING_SECONDS_UI} Sek. sprechen${isIOS() ? ", auf iPhone 5 Sek." : ""})`
+                : canStop
+                  ? "Tippe zum Stoppen und Verarbeiten"
+                  : `Mindestens ${MIN_RECORDING_SECONDS_UI} Sekunden – bitte weiter sprechen… (${minRecordingSeconds - seconds}s)`}
             </p>
           </div>
         )}
