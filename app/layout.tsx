@@ -5,6 +5,10 @@ import { Toaster } from "react-hot-toast";
 export const metadata: Metadata = {
   title: "MeisterFlow - KI-Automation für Handwerker",
   description: "Automatisiere die Büroarbeit deines Handwerksbetriebs mit KI",
+  icons: {
+    icon: "/meisterflow-logo.png",
+    apple: "/meisterflow-logo.png",
+  },
 };
 
 export default function RootLayout({

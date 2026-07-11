@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
+import MeisterFlowLogo from "@/components/MeisterFlowLogo";
 import {
   LayoutDashboard,
   Users,
@@ -10,7 +11,6 @@ import {
   Receipt,
   CalendarDays,
   LogOut,
-  Wrench,
   ChevronLeft,
   ChevronRight,
   Menu,
@@ -63,15 +63,14 @@ export default function Sidebar() {
         } md:translate-x-0`}
       >
         {/* Logo */}
-        <div className="h-16 flex items-center justify-between px-4 border-b border-dark-800">
-          <div className="flex items-center min-w-0">
-            <div className="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center shrink-0">
-              <Wrench className="w-5 h-5 text-white" />
-            </div>
-            {!collapsed && (
-              <span className="ml-3 font-bold text-white text-lg truncate">MeisterFlow</span>
+        <div className="h-16 flex items-center justify-between px-3 border-b border-dark-800">
+          <Link href="/dashboard" className="flex items-center min-w-0" onClick={closeMobile}>
+            {collapsed ? (
+              <MeisterFlowLogo iconOnly size="xs" />
+            ) : (
+              <MeisterFlowLogo size="sm" priority />
             )}
-          </div>
+          </Link>
           <button
             onClick={closeMobile}
             className="md:hidden p-1 text-dark-500 hover:text-white"

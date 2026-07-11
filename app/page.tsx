@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import {
-  Wrench,
   Zap,
   FileText,
   MessageSquare,
@@ -17,6 +16,7 @@ import {
   Menu,
   X,
 } from "lucide-react";
+import MeisterFlowLogo from "@/components/MeisterFlowLogo";
 import toast from "react-hot-toast";
 
 export default function LandingPage() {
@@ -99,12 +99,7 @@ export default function LandingPage() {
       <nav className="fixed top-0 left-0 right-0 z-50 bg-dark-950/80 backdrop-blur-xl border-b border-dark-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center">
-                <Wrench className="w-5 h-5 text-white" />
-              </div>
-              <span className="text-xl font-bold text-white">MeisterFlow</span>
-            </div>
+            <MeisterFlowLogo size="sm" priority />
             <div className="hidden md:flex items-center gap-8">
               <a href="#features" className="text-dark-400 hover:text-white transition-colors">Features</a>
               <a href="#preise" className="text-dark-400 hover:text-white transition-colors">Preise</a>
@@ -140,8 +135,11 @@ export default function LandingPage() {
       </nav>
 
       {/* Hero */}
-      <section className="pt-32 pb-20 px-4">
+      <section className="pt-28 pb-20 px-4">
         <div className="max-w-7xl mx-auto text-center">
+          <div className="mb-8 flex justify-center">
+            <MeisterFlowLogo size="xl" priority className="shadow-lg shadow-brand-500/10" />
+          </div>
           <div className="inline-flex items-center gap-2 bg-brand-500/10 text-brand-400 px-4 py-2 rounded-full text-sm font-medium mb-8">
             <Sparkles className="w-4 h-4" />
             KI-gestützte Automation für Handwerker
@@ -409,12 +407,7 @@ export default function LandingPage() {
       {/* Footer */}
       <footer className="py-8 px-4 border-t border-dark-800">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 bg-brand-600 rounded flex items-center justify-center">
-              <Wrench className="w-4 h-4 text-white" />
-            </div>
-            <span className="font-semibold text-white">MeisterFlow</span>
-          </div>
+          <MeisterFlowLogo size="sm" />
           <div className="flex items-center gap-6 text-sm text-dark-500">
             <span>© 2026 MeisterFlow</span>
             <a href="#" className="hover:text-dark-300">Datenschutz</a>
@@ -434,8 +427,8 @@ export default function LandingPage() {
               <X className="w-5 h-5" />
             </button>
             <div className="text-center mb-6">
-              <div className="w-12 h-12 bg-brand-600 rounded-xl flex items-center justify-center mx-auto mb-4">
-                <Wrench className="w-6 h-6 text-white" />
+              <div className="flex justify-center mb-4">
+                <MeisterFlowLogo size="md" />
               </div>
               <h2 className="text-2xl font-bold text-white">
                 {isLogin ? "Willkommen zurück" : "Konto erstellen"}
