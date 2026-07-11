@@ -90,14 +90,11 @@ export default function SpracheZuAngebot({ onClose, onAdopt }: SpracheZuAngebotP
       recorder.onstop = () => resolve();
     });
 
-    if (recorder.state === "recording") {
-      recorder.requestData();
-    }
     recorder.stop();
 
     await waitForStop;
     // Safari/iOS: finaler Chunk kommt manchmal knapp nach onstop
-    await new Promise((r) => setTimeout(r, 150));
+    await new Promise((r) => setTimeout(r, 500));
 
     const chunks = [...chunksRef.current];
     const totalSize = sumChunkBytes(chunks);
@@ -200,12 +197,8 @@ export default function SpracheZuAngebot({ onClose, onAdopt }: SpracheZuAngebotP
         }
       };
 
-      // iOS/Safari: Timeslices liefern oft 0 Bytes – ein Blob beim Stop ist zuverlässiger
-      if (isIOS()) {
-        recorder.start();
-      } else {
-        recorder.start(1000);
-      }
+      // Safari/iOS: start(1000) liefert zuverlässige Chunks (start() ohne Timeslice oft 0 Bytes)
+      recorder.start(1000);
       setStep("recording");
 
       timerRef.current = setInterval(() => {
