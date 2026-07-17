@@ -10,8 +10,10 @@ import PDFExport from "@/components/PDFExport";
 import EmailSender from "@/components/EmailSender";
 import StatusBadge from "@/components/StatusBadge";
 import WhatsAppSender from "@/components/WhatsAppSender";
+import GelesenStatus from "@/components/GelesenStatus";
+import TrackingLinkButton from "@/components/TrackingLinkButton";
 import { Plus, Search, FileText, Calendar, User, Send, CheckCircle, XCircle, Receipt } from "lucide-react";
-import { getKundeName, getKundeLabel } from "@/lib/kunde-utils";
+import { getKundeName } from "@/lib/kunde-utils";
 import { formatCurrency, formatDate } from "@/lib/utils";
 import { AngebotInitialData } from "@/types";
 import toast from "react-hot-toast";
@@ -19,7 +21,7 @@ import toast from "react-hot-toast";
 export default function AngebotePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { angebote, loading, updateAngebotStatus } = useData();
+  const { angebote, loading, updateAngebotStatus, refreshAngebote } = useData();
   const [showForm, setShowForm] = useState(false);
   const [showSprache, setShowSprache] = useState(false);
   const [showFoto, setShowFoto] = useState(false);
@@ -31,7 +33,23 @@ export default function AngebotePage() {
   useEffect(() => {
     const filter = searchParams.get("filter");
     if (filter === "offen") setStatusFilter("offen");
+    if (filter === "ungelesen") setStatusFilter("ungelesen");
   }, [searchParams]);
+
+  // Aktualisiert gelesen_am, wenn Handwerker zurück in den Tab kommt
+  useEffect(() => {
+    const onFocus = () => {
+      void refreshAngebote();
+    };
+    window.addEventListener("focus", onFocus);
+    const interval = window.setInterval(() => {
+      void refreshAngebote();
+    }, 60000);
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      window.clearInterval(interval);
+    };
+  }, [refreshAngebote]);
 
   const openManualForm = () => {
     setFormInitialData(undefined);
@@ -52,9 +70,13 @@ export default function AngebotePage() {
       statusFilter === "alle" ||
       (statusFilter === "offen"
         ? a.status === "entwurf" || a.status === "versendet"
-        : a.status === statusFilter);
+        : statusFilter === "ungelesen"
+          ? a.status === "versendet" && !a.gelesen_am
+          : a.status === statusFilter);
     return matchesSearch && matchesStatus;
   });
+
+  const ungelesenCount = angebote.filter((a) => a.status === "versendet" && !a.gelesen_am).length;
 
   const statusOptions = [
     { value: "alle", label: "Alle", count: angebote.length },
@@ -130,14 +152,17 @@ export default function AngebotePage() {
       {statusFilter === "offen" && (
         <p className="text-sm text-brand-400">Filter aktiv: Offene Angebote (Entwurf & Versendet)</p>
       )}
+      {statusFilter === "ungelesen" && (
+        <p className="text-sm text-amber-300">Filter aktiv: Versendet, noch nicht geöffnet</p>
+      )}
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         {statusOptions.slice(1).map((opt) => (
           <button
             key={opt.value}
             onClick={() => setStatusFilter(statusFilter === opt.value ? "alle" : opt.value)}
-            className={`card text-left transition-all ${
+            className={`card text-left transition-all min-h-[72px] ${
               statusFilter === opt.value ? "border-brand-500 ring-1 ring-brand-500/20" : ""
             }`}
           >
@@ -145,6 +170,15 @@ export default function AngebotePage() {
             <p className="text-2xl font-bold text-white mt-1">{opt.count}</p>
           </button>
         ))}
+        <button
+          onClick={() => setStatusFilter(statusFilter === "ungelesen" ? "alle" : "ungelesen")}
+          className={`card text-left transition-all min-h-[72px] ${
+            statusFilter === "ungelesen" ? "border-amber-500 ring-1 ring-amber-500/20" : ""
+          }`}
+        >
+          <p className="text-xs text-dark-500 uppercase font-medium">Nicht geöffnet</p>
+          <p className="text-2xl font-bold text-amber-300 mt-1">{ungelesenCount}</p>
+        </button>
       </div>
 
       {/* Search */}
@@ -220,12 +254,22 @@ export default function AngebotePage() {
                       </div>
                     </td>
                     <td className="px-4 py-4">
-                      <StatusBadge status={angebot.status} />
+                      <div className="flex flex-col items-start">
+                        <StatusBadge status={angebot.status} />
+                        {(angebot.status === "versendet" ||
+                          angebot.status === "angenommen" ||
+                          angebot.status === "abgelehnt" ||
+                          !!angebot.gelesen_am) && (
+                          <GelesenStatus gelesenAm={angebot.gelesen_am} />
+                        )}
+                      </div>
                     </td>
                     <td className="px-4 py-4 table-actions-cell">
                       <div className="action-buttons-container">
                         {/* PDF Export */}
                         <PDFExport type="angebot" data={angebot} />
+
+                        <TrackingLinkButton angebotId={angebot.id} />
 
                         {/* E-Mail Senden */}
                         {angebot.kunde?.email && (
@@ -237,6 +281,7 @@ export default function AngebotePage() {
                             betreff={angebot.betreff}
                             beschreibung={angebot.beschreibung}
                             brutto={angebot.brutto}
+                            angebotId={angebot.id}
                           />
                         )}
 
@@ -247,6 +292,7 @@ export default function AngebotePage() {
                             betreff={angebot.betreff}
                             beschreibung={angebot.beschreibung}
                             brutto={angebot.brutto}
+                            angebotId={angebot.id}
                           />
                         </div>
 

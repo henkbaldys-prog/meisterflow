@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { FileText, Download, Loader2 } from "lucide-react";
-import { getKundeName, formatKundeAdresse } from "@/lib/kunde-utils";
+import { FileText, Loader2 } from "lucide-react";
+import { buildAngebotPdf } from "@/lib/angebot-pdf";
 import { Kunde } from "@/types";
 import toast from "react-hot-toast";
 
@@ -29,22 +29,36 @@ export default function PDFExport({ type, data }: PDFExportProps) {
   const generatePDF = async () => {
     setLoading(true);
     try {
-      // Dynamischer Import von jsPDF (Client-side only)
+      if (type === "angebot") {
+        const doc = buildAngebotPdf({
+          nummer: data.nummer,
+          betreff: data.betreff,
+          beschreibung: data.beschreibung,
+          netto: data.netto,
+          mwst_satz: data.mwst_satz,
+          brutto: data.brutto,
+          created_at: data.created_at,
+          gueltig_bis: data.gueltig_bis,
+          kunde: data.kunde,
+        });
+        doc.save(`ANGEBOT_${data.nummer}.pdf`);
+        toast.success("PDF erfolgreich erstellt!");
+        return;
+      }
+
+      // Rechnung: bisherige Client-Logik (Feature 1 ändert nur Angebote)
       const { jsPDF } = await import("jspdf");
       const doc = new jsPDF();
 
-      const isAngebot = type === "angebot";
-      const title = isAngebot ? "ANGEBOT" : "RECHNUNG";
-      const subTitle = isAngebot ? "Angebotsnummer" : "Rechnungsnummer";
-      const dateLabel = isAngebot ? "Gültig bis" : "Fällig am";
-      const dateValue = isAngebot ? data.gueltig_bis : data.faellig_am;
+      const title = "RECHNUNG";
+      const subTitle = "Rechnungsnummer";
+      const dateLabel = "Fällig am";
+      const dateValue = data.faellig_am;
 
-      // Farben
-      const primaryColor: [number, number, number] = [37, 99, 235]; // brand-600
-      const darkColor: [number, number, number] = [15, 23, 42]; // dark-950
-      const grayColor: [number, number, number] = [100, 116, 139]; // dark-500
+      const primaryColor: [number, number, number] = [37, 99, 235];
+      const darkColor: [number, number, number] = [15, 23, 42];
+      const grayColor: [number, number, number] = [100, 116, 139];
 
-      // Header
       doc.setFillColor(...primaryColor);
       doc.rect(0, 0, 210, 35, "F");
 
@@ -57,13 +71,11 @@ export default function PDFExport({ type, data }: PDFExportProps) {
       doc.setFont("helvetica", "normal");
       doc.text("Ihr Handwerksbetrieb", 15, 28);
 
-      // Titel
       doc.setTextColor(...darkColor);
       doc.setFontSize(28);
       doc.setFont("helvetica", "bold");
       doc.text(title, 15, 55);
 
-      // Nummer und Datum
       doc.setFontSize(10);
       doc.setFont("helvetica", "normal");
       doc.setTextColor(...grayColor);
@@ -73,8 +85,8 @@ export default function PDFExport({ type, data }: PDFExportProps) {
         doc.text(`${dateLabel}: ${new Date(dateValue).toLocaleDateString("de-DE")}`, 15, 75);
       }
 
-      // Kunden-Daten
       if (data.kunde) {
+        const { getKundeName, formatKundeAdresse } = await import("@/lib/kunde-utils");
         doc.setFillColor(248, 250, 252);
         doc.rect(120, 50, 75, 35, "F");
         doc.setTextColor(...darkColor);
@@ -88,16 +100,18 @@ export default function PDFExport({ type, data }: PDFExportProps) {
         }
         const adresse = formatKundeAdresse(data.kunde);
         if (adresse) {
-          doc.text(adresse, 125, data.kunde.firma && data.kunde.firma !== data.kunde.ansprechpartner ? 74 : 69);
+          doc.text(
+            adresse,
+            125,
+            data.kunde.firma && data.kunde.firma !== data.kunde.ansprechpartner ? 74 : 69,
+          );
         }
       }
 
-      // Trennlinie
       doc.setDrawColor(...primaryColor);
       doc.setLineWidth(0.5);
       doc.line(15, 90, 195, 90);
 
-      // Betreff
       doc.setTextColor(...darkColor);
       doc.setFontSize(12);
       doc.setFont("helvetica", "bold");
@@ -106,17 +120,13 @@ export default function PDFExport({ type, data }: PDFExportProps) {
       doc.text(data.betreff, 15, 107);
 
       const description = data.beschreibung ?? data.betreff;
-
-      // Beschreibung
       doc.setFontSize(10);
       doc.setTextColor(...grayColor);
       const splitDesc = doc.splitTextToSize(description, 180);
       doc.text(splitDesc, 15, 118);
 
-      // Positionen-Tabelle
-      const tableY = 140 + (splitDesc.length * 5);
+      const tableY = 140 + splitDesc.length * 5;
 
-      // Tabellen-Header
       doc.setFillColor(...primaryColor);
       doc.rect(15, tableY, 180, 10, "F");
       doc.setTextColor(255, 255, 255);
@@ -127,20 +137,16 @@ export default function PDFExport({ type, data }: PDFExportProps) {
       doc.text("Netto", 140, tableY + 7);
       doc.text("MwSt.", 165, tableY + 7);
 
-      // Tabellen-Zeile
       doc.setFillColor(248, 250, 252);
       doc.rect(15, tableY + 10, 180, 10, "F");
       doc.setTextColor(...darkColor);
       doc.setFont("helvetica", "normal");
       doc.text("1", 20, tableY + 17);
-      const shortDesc = description.length > 40 
-        ? description.substring(0, 40) + "..." 
-        : description;
+      const shortDesc = description.length > 40 ? description.substring(0, 40) + "..." : description;
       doc.text(shortDesc, 40, tableY + 17);
       doc.text(`${data.netto.toFixed(2)} €`, 140, tableY + 17);
       doc.text(`${data.mwst_satz}%`, 165, tableY + 17);
 
-      // Summen-Box
       const sumY = tableY + 30;
       doc.setFillColor(248, 250, 252);
       doc.rect(120, sumY, 75, 35, "F");
@@ -164,7 +170,6 @@ export default function PDFExport({ type, data }: PDFExportProps) {
       doc.setFontSize(12);
       doc.text(`${data.brutto.toFixed(2)} €`, 185, sumY + 28, { align: "right" });
 
-      // Footer
       doc.setDrawColor(...grayColor);
       doc.setLineWidth(0.3);
       doc.line(15, 270, 195, 270);
@@ -175,7 +180,6 @@ export default function PDFExport({ type, data }: PDFExportProps) {
       doc.text("MeisterFlow - Automatisierung für Handwerker", 15, 278);
       doc.text("Dieses Dokument wurde automatisch generiert.", 15, 283);
 
-      // Speichern
       doc.save(`${title}_${data.nummer}.pdf`);
       toast.success("PDF erfolgreich erstellt!");
     } catch (error) {

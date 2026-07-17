@@ -75,3 +75,37 @@ export function getTimeGreeting(): string {
 export function todayISO(): string {
   return new Date().toISOString().split("T")[0];
 }
+
+/** Absolute Tracking-URL für Kunden (funktioniert auf Handy ohne Login). */
+export function getAngebotTrackUrl(angebotId: string, origin?: string): string {
+  const base =
+    origin ||
+    (typeof window !== "undefined" ? window.location.origin : "") ||
+    process.env.NEXT_PUBLIC_APP_URL ||
+    "";
+  return `${base}/api/angebote/track/${angebotId}`;
+}
+
+/** z.B. "Geöffnet vor 2 Stunden" / "Noch nicht geöffnet" */
+export function formatGelesenStatus(gelesenAm: string | null | undefined): {
+  label: string;
+  opened: boolean;
+} {
+  if (!gelesenAm) {
+    return { label: "Noch nicht geöffnet", opened: false };
+  }
+
+  const openedAt = new Date(gelesenAm).getTime();
+  const diffMs = Date.now() - openedAt;
+  const minutes = Math.floor(diffMs / 60000);
+  const hours = Math.floor(diffMs / 3600000);
+  const days = Math.floor(diffMs / 86400000);
+
+  let relative: string;
+  if (minutes < 1) relative = "gerade eben";
+  else if (minutes < 60) relative = `vor ${minutes} Minute${minutes === 1 ? "" : "n"}`;
+  else if (hours < 24) relative = `vor ${hours} Stunde${hours === 1 ? "" : "n"}`;
+  else relative = `vor ${days} Tag${days === 1 ? "" : "en"}`;
+
+  return { label: `Geöffnet ${relative}`, opened: true };
+}

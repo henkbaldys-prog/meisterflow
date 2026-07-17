@@ -27,7 +27,8 @@ create table angebote (
   brutto decimal(10,2) not null,
   status text default 'entwurf' check (status in ('entwurf', 'versendet', 'angenommen', 'abgelehnt')),
   user_id uuid references auth.users not null,
-  gueltig_bis date not null
+  gueltig_bis date not null,
+  gelesen_am timestamptz default null
 );
 
 -- Rechnungen-Tabelle
@@ -145,3 +146,67 @@ create policy "Users can only see/edit their own profile" on firmenprofile
   for all using (auth.uid() = user_id);
 
 create index idx_firmenprofile_user_id on firmenprofile(user_id);
+
+-- Angebot-Tracking (gelesen_am + öffentlicher RPC)
+create index if not exists idx_angebote_gelesen_am
+  on angebote (user_id, gelesen_am)
+  where gelesen_am is null;
+
+create or replace function public.open_angebot_tracking(p_id uuid)
+returns json
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  result json;
+begin
+  update angebote
+  set gelesen_am = coalesce(gelesen_am, now())
+  where id = p_id;
+
+  if not found then
+    return null;
+  end if;
+
+  select json_build_object(
+    'id', a.id,
+    'nummer', a.nummer,
+    'betreff', a.betreff,
+    'beschreibung', a.beschreibung,
+    'netto', a.netto,
+    'mwst_satz', a.mwst_satz,
+    'brutto', a.brutto,
+    'created_at', a.created_at,
+    'gueltig_bis', a.gueltig_bis,
+    'status', a.status,
+    'gelesen_am', a.gelesen_am,
+    'kunde', case when k.id is null then null else json_build_object(
+      'firma', k.firma,
+      'ansprechpartner', k.ansprechpartner,
+      'strasse', k.strasse,
+      'plz', k.plz,
+      'ort', k.ort
+    ) end,
+    'firma', case when f.id is null then null else json_build_object(
+      'firmenname', f.firmenname,
+      'strasse', f.strasse,
+      'plz', f.plz,
+      'ort', f.ort,
+      'telefon', f.telefon,
+      'email', f.email,
+      'standard_angebotstext', f.standard_angebotstext
+    ) end
+  )
+  into result
+  from angebote a
+  left join kunden k on k.id = a.kunde_id
+  left join firmenprofile f on f.user_id = a.user_id
+  where a.id = p_id;
+
+  return result;
+end;
+$$;
+
+revoke all on function public.open_angebot_tracking(uuid) from public;
+grant execute on function public.open_angebot_tracking(uuid) to anon, authenticated;

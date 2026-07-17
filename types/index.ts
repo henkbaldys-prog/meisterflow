@@ -24,6 +24,7 @@ export interface Angebot {
   status: "entwurf" | "versendet" | "angenommen" | "abgelehnt";
   user_id: string;
   gueltig_bis: string;
+  gelesen_am: string | null;
   kunde?: Kunde;
 }
 

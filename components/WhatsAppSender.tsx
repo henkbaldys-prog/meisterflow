@@ -10,6 +10,8 @@ interface WhatsAppSenderProps {
   betreff: string;
   beschreibung: string;
   brutto: number;
+  /** Für Angebot-Tracking-Link */
+  angebotId?: string;
 }
 
 export default function WhatsAppSender({
@@ -18,6 +20,7 @@ export default function WhatsAppSender({
   betreff,
   beschreibung,
   brutto,
+  angebotId,
 }: WhatsAppSenderProps) {
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -26,7 +29,10 @@ export default function WhatsAppSender({
   const generateMessage = async () => {
     setLoading(true);
     try {
-      const defaultMessage = `Hallo ${kundenName},\n\nhiermit sende ich Ihnen unser Angebot ${nummer}:\n${betreff}\n\nGesamtbetrag: ${brutto.toFixed(2)} € (inkl. MwSt.)\n\nBei Fragen melden Sie sich gerne.\n\nViele Grüße`;
+      const trackUrl = angebotId
+        ? `${window.location.origin}/api/angebote/track/${angebotId}`
+        : "";
+      const defaultMessage = `Hallo ${kundenName},\n\nhiermit sende ich Ihnen unser Angebot ${nummer}:\n${betreff}\n\nGesamtbetrag: ${brutto.toFixed(2)} € (inkl. MwSt.)${trackUrl ? `\n\nAngebot öffnen:\n${trackUrl}` : ""}\n\nBei Fragen melden Sie sich gerne.\n\nViele Grüße`;
       setMessage(defaultMessage);
       setShowModal(true);
     } catch (error: any) {
