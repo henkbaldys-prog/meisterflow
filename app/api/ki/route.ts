@@ -22,11 +22,16 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { type, beschreibung, kundenName, context, emailInhalt, nachricht, zahlen, aeltesteOffeneAngebote, ueberfaelligeRechnungen } =
+    const { type, beschreibung, kundenName, context, emailInhalt, nachricht, zahlen, aeltesteOffeneAngebote, ueberfaelligeRechnungen, ungeöffneteAngebote } =
       await req.json();
 
     if (type === "tagesuebersicht") {
-      const text = await generateTagesuebersicht(zahlen || {}, aeltesteOffeneAngebote || [], ueberfaelligeRechnungen || []);
+      const text = await generateTagesuebersicht(
+        zahlen || {},
+        aeltesteOffeneAngebote || [],
+        ueberfaelligeRechnungen || [],
+        ungeöffneteAngebote || [],
+      );
       return NextResponse.json({ text });
     }
 

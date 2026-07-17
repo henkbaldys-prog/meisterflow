@@ -24,6 +24,21 @@ export interface Angebot {
   status: "entwurf" | "versendet" | "angenommen" | "abgelehnt";
   user_id: string;
   gueltig_bis: string;
+  /** Erster Öffnungszeitpunkt des Kunden-Tracking-Links */
+  gelesen_am?: string | null;
+  kunde?: Kunde;
+}
+
+export interface FollowUp {
+  id: string;
+  user_id: string;
+  angebot_id: string;
+  kunde_id: string;
+  erstellt_am: string;
+  faellig_am: string;
+  status: "offen" | "erledigt";
+  type: string;
+  angebot?: Angebot;
   kunde?: Kunde;
 }
 
@@ -37,8 +52,10 @@ export interface Rechnung {
   netto: number;
   mwst_satz: number;
   brutto: number;
-  status: "entwurf" | "versendet" | "bezahlt" | "ueberfaellig";
+  status: "entwurf" | "versendet" | "bezahlt" | "ueberfaellig" | "gemahnt";
   faellig_am: string;
+  gemahnt_am?: string | null;
+  naechste_mahnung_am?: string | null;
   user_id: string;
   kunde?: Kunde;
 }

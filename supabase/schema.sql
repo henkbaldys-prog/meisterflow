@@ -27,7 +27,8 @@ create table angebote (
   brutto decimal(10,2) not null,
   status text default 'entwurf' check (status in ('entwurf', 'versendet', 'angenommen', 'abgelehnt')),
   user_id uuid references auth.users not null,
-  gueltig_bis date not null
+  gueltig_bis date not null,
+  gelesen_am timestamptz default null
 );
 
 -- Rechnungen-Tabelle
@@ -41,8 +42,10 @@ create table rechnungen (
   netto decimal(10,2) not null,
   mwst_satz integer default 19,
   brutto decimal(10,2) not null,
-  status text default 'entwurf' check (status in ('entwurf', 'versendet', 'bezahlt', 'ueberfaellig')),
+  status text default 'entwurf' check (status in ('entwurf', 'versendet', 'bezahlt', 'ueberfaellig', 'gemahnt')),
   faellig_am date not null,
+  gemahnt_am timestamptz default null,
+  naechste_mahnung_am date default null,
   user_id uuid references auth.users not null
 );
 
@@ -145,3 +148,26 @@ create policy "Users can only see/edit their own profile" on firmenprofile
   for all using (auth.uid() = user_id);
 
 create index idx_firmenprofile_user_id on firmenprofile(user_id);
+
+-- Follow-ups (Feature 2)
+create table if not exists follow_ups (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users(id) on delete cascade not null,
+  angebot_id uuid references angebote(id) on delete cascade not null,
+  kunde_id uuid references kunden(id) on delete cascade not null,
+  erstellt_am timestamptz default now() not null,
+  faellig_am timestamptz not null,
+  status text default 'offen' check (status in ('offen', 'erledigt')),
+  type text default 'angebot_followup' not null,
+  unique (angebot_id)
+);
+
+alter table follow_ups enable row level security;
+
+create policy "Users can only see their own follow_ups"
+  on follow_ups for all
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+create index if not exists idx_follow_ups_user_id on follow_ups(user_id);
+create index if not exists idx_follow_ups_faellig_am on follow_ups(faellig_am);

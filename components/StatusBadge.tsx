@@ -7,6 +7,7 @@ const statusConfig: Record<string, { label: string; className: string }> = {
   abgelehnt: { label: "Abgelehnt", className: "badge-red" },
   bezahlt: { label: "Bezahlt", className: "badge-green" },
   ueberfaellig: { label: "Überfällig", className: "badge-red" },
+  gemahnt: { label: "Gemahnt", className: "badge-yellow" },
   geplant: { label: "Geplant", className: "badge-yellow" },
   bestaetigt: { label: "Bestätigt", className: "badge-blue" },
   abgeschlossen: { label: "Abgeschlossen", className: "badge-green" },

@@ -122,18 +122,21 @@ export async function generateTagesuebersicht(
   zahlen: Record<string, number>,
   aeltesteOffeneAngebote: unknown[],
   ueberfaelligeRechnungen: unknown[],
+  ungeöffneteAngebote: unknown[] = [],
 ): Promise<string> {
   const prompt = `Du bist Geschäftsführer-Assistent für einen Handwerker.
 
 Aktuelle Zahlen: ${JSON.stringify(zahlen)}
-Liste der 3 ältesten offenen Angebote: ${JSON.stringify(aeltesteOffeneAngebote)}
+Liste der 3 ältesten offenen Angebote (Entwürfe): ${JSON.stringify(aeltesteOffeneAngebote)}
+Versendete Angebote, die der Kunde noch NICHT geöffnet hat: ${JSON.stringify(ungeöffneteAngebote)}
 Liste der überfälligen Rechnungen: ${JSON.stringify(ueberfaelligeRechnungen)}
 
 Gib EINE konkrete, pragmatische Handlungsempfehlung in 1-2 Sätzen.
+Priorität: ungeöffnete Angebote nachfassen > überfällige Rechnungen > Entwürfe abschicken.
 Beispiele:
+- "3 Angebote noch nicht geöffnet – bei Müller nachfassen?"
 - "Angebot Nr. 14 für Müller Bau sollten Sie heute abschicken – wartet seit 5 Tagen."
 - "Rechnung Nr. 7 über 2.450 € ist seit 3 Tagen überfällig – Mahnung prüfen?"
-- "Heute 14:30 Termin bei Schmidt – Adresse: Musterstraße 12"
 
 Sei direkt, nicht zu formell. Max. 2 Sätze.`;
 

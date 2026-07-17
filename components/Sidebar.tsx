@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
+import { useData } from "@/contexts/DataContext";
 import MeisterFlowLogo from "@/components/MeisterFlowLogo";
 import {
   LayoutDashboard,
@@ -17,7 +18,7 @@ import {
   X,
   Settings,
 } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -31,8 +32,14 @@ const navItems = [
 export default function Sidebar() {
   const pathname = usePathname();
   const { signOut } = useAuth();
+  const { followUps } = useData();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+
+  const openFollowUps = useMemo(
+    () => followUps.filter((f) => f.status === "offen").length,
+    [followUps],
+  );
 
   const closeMobile = () => setMobileOpen(false);
 
@@ -45,6 +52,11 @@ export default function Sidebar() {
         aria-label="Menü öffnen"
       >
         <Menu className="w-6 h-6" />
+        {openFollowUps > 0 && (
+          <span className="absolute -right-1 -top-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-brand-500 px-1 text-[10px] font-bold text-white">
+            {openFollowUps > 9 ? "9+" : openFollowUps}
+          </span>
+        )}
       </button>
 
       {/* Mobile Backdrop */}
@@ -85,6 +97,7 @@ export default function Sidebar() {
           {navItems.map((item) => {
             const isActive = pathname === item.href;
             const Icon = item.icon;
+            const showBadge = item.href === "/dashboard" && openFollowUps > 0;
             return (
               <Link
                 key={item.href}
@@ -97,8 +110,22 @@ export default function Sidebar() {
                 }`}
                 title={collapsed ? item.label : undefined}
               >
-                <Icon className="w-5 h-5 shrink-0" />
-                {!collapsed && <span className="text-sm font-medium">{item.label}</span>}
+                <span className="relative shrink-0">
+                  <Icon className="w-5 h-5" />
+                  {showBadge && collapsed && (
+                    <span className="absolute -right-1.5 -top-1.5 h-2 w-2 rounded-full bg-brand-500" />
+                  )}
+                </span>
+                {!collapsed && (
+                  <>
+                    <span className="text-sm font-medium flex-1">{item.label}</span>
+                    {showBadge && (
+                      <span className="rounded-full bg-brand-500/20 px-2 py-0.5 text-[11px] font-semibold text-brand-300">
+                        {openFollowUps}
+                      </span>
+                    )}
+                  </>
+                )}
               </Link>
             );
           })}

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { MessageCircle, X, Send, Loader2 } from "lucide-react";
+import { useData } from "@/contexts/DataContext";
 import toast from "react-hot-toast";
 
 interface WhatsAppSenderProps {
@@ -10,6 +11,9 @@ interface WhatsAppSenderProps {
   betreff: string;
   beschreibung: string;
   brutto: number;
+  /** Wenn gesetzt, wird der Tracking-Link in die Nachricht eingefügt */
+  angebotId?: string;
+  kundeId?: string;
 }
 
 export default function WhatsAppSender({
@@ -18,7 +22,10 @@ export default function WhatsAppSender({
   betreff,
   beschreibung,
   brutto,
+  angebotId,
+  kundeId,
 }: WhatsAppSenderProps) {
+  const { ensureFollowUpForAngebot } = useData();
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
@@ -26,7 +33,9 @@ export default function WhatsAppSender({
   const generateMessage = async () => {
     setLoading(true);
     try {
-      const defaultMessage = `Hallo ${kundenName},\n\nhiermit sende ich Ihnen unser Angebot ${nummer}:\n${betreff}\n\nGesamtbetrag: ${brutto.toFixed(2)} € (inkl. MwSt.)\n\nBei Fragen melden Sie sich gerne.\n\nViele Grüße`;
+      const { getAngebotTrackingUrl } = await import("@/lib/angebot-tracking");
+      const link = angebotId ? `\n\nAngebot öffnen:\n${getAngebotTrackingUrl(angebotId)}` : "";
+      const defaultMessage = `Hallo ${kundenName},\n\nhiermit sende ich Ihnen unser Angebot ${nummer}:\n${betreff}\n\nGesamtbetrag: ${brutto.toFixed(2)} € (inkl. MwSt.)${link}\n\nBei Fragen melden Sie sich gerne.\n\nViele Grüße`;
       setMessage(defaultMessage);
       setShowModal(true);
     } catch (error: any) {
@@ -36,9 +45,12 @@ export default function WhatsAppSender({
     }
   };
 
-  const openWhatsApp = () => {
+  const openWhatsApp = async () => {
     const text = encodeURIComponent(message);
     window.open(`https://wa.me/?text=${text}`, "_blank");
+    if (angebotId && kundeId) {
+      await ensureFollowUpForAngebot(angebotId, kundeId);
+    }
     toast.success("WhatsApp geöffnet!");
   };
 

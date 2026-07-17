@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { Mail, Send, Copy, Check, Loader2, X } from "lucide-react";
+import { getAngebotTrackingUrl } from "@/lib/angebot-tracking";
+import { useData } from "@/contexts/DataContext";
 import toast from "react-hot-toast";
 
 interface EmailSenderProps {
@@ -12,6 +14,9 @@ interface EmailSenderProps {
   betreff: string;
   beschreibung: string;
   brutto: number;
+  /** Wenn gesetzt, wird der Tracking-Link in die Nachricht eingefügt */
+  angebotId?: string;
+  kundeId?: string;
 }
 
 export default function EmailSender({
@@ -22,7 +27,10 @@ export default function EmailSender({
   betreff,
   beschreibung,
   brutto,
+  angebotId,
+  kundeId,
 }: EmailSenderProps) {
+  const { ensureFollowUpForAngebot } = useData();
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
@@ -30,11 +38,22 @@ export default function EmailSender({
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
 
+  const maybeCreateFollowUp = async () => {
+    if (type === "angebot" && angebotId && kundeId) {
+      await ensureFollowUpForAngebot(angebotId, kundeId);
+    }
+  };
+
   const buildDefaultContent = () => {
     const isAngebot = type === "angebot";
     const defaultSubject = isAngebot
       ? `Angebot ${nummer}: ${betreff}`
       : `Rechnung ${nummer}: ${betreff}`;
+
+    const trackingLine =
+      isAngebot && angebotId
+        ? `\n\nAngebot online öffnen:\n${getAngebotTrackingUrl(angebotId)}`
+        : "";
 
     const defaultBody = isAngebot
       ? `Sehr geehrte/r ${kundenName},
@@ -45,7 +64,7 @@ ${betreff}
 
 ${beschreibung}
 
-Gesamtbetrag: ${brutto.toFixed(2)} € (inkl. MwSt.)
+Gesamtbetrag: ${brutto.toFixed(2)} € (inkl. MwSt.)${trackingLine}
 
 Das Angebot ist 30 Tage gültig. Bei Fragen stehe ich Ihnen gerne zur Verfügung.
 
@@ -133,6 +152,7 @@ Ihr Team von MeisterFlow`;
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Versand fehlgeschlagen");
 
+      await maybeCreateFollowUp();
       toast.success("E-Mail gesendet!");
       setShowModal(false);
     } catch (error: any) {
@@ -150,14 +170,16 @@ Ihr Team von MeisterFlow`;
     toast.success("E-Mail kopiert!");
   };
 
-  const openGmail = () => {
+  const openGmail = async () => {
     const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(to)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     window.open(gmailUrl, "_blank");
+    await maybeCreateFollowUp();
   };
 
-  const openOutlook = () => {
+  const openOutlook = async () => {
     const outlookUrl = `https://outlook.live.com/mail/0/deeplink/compose?to=${encodeURIComponent(to)}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     window.open(outlookUrl, "_blank");
+    await maybeCreateFollowUp();
   };
 
   return (

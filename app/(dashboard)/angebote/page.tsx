@@ -10,16 +10,19 @@ import PDFExport from "@/components/PDFExport";
 import EmailSender from "@/components/EmailSender";
 import StatusBadge from "@/components/StatusBadge";
 import WhatsAppSender from "@/components/WhatsAppSender";
-import { Plus, Search, FileText, Calendar, User, Send, CheckCircle, XCircle, Receipt } from "lucide-react";
+import AngebotGelesenStatus from "@/components/AngebotGelesenStatus";
+import AngebotTrackLink from "@/components/AngebotTrackLink";
+import { Plus, Search, FileText, Calendar, User, Send, CheckCircle, XCircle, Receipt, AlertTriangle } from "lucide-react";
 import { getKundeName, getKundeLabel } from "@/lib/kunde-utils";
 import { formatCurrency, formatDate } from "@/lib/utils";
+import { daysUntilFaellig } from "@/lib/follow-up";
 import { AngebotInitialData } from "@/types";
 import toast from "react-hot-toast";
 
 export default function AngebotePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { angebote, loading, updateAngebotStatus } = useData();
+  const { angebote, loading, updateAngebotStatus, followUps } = useData();
   const [showForm, setShowForm] = useState(false);
   const [showSprache, setShowSprache] = useState(false);
   const [showFoto, setShowFoto] = useState(false);
@@ -31,6 +34,7 @@ export default function AngebotePage() {
   useEffect(() => {
     const filter = searchParams.get("filter");
     if (filter === "offen") setStatusFilter("offen");
+    if (filter === "versendet") setStatusFilter("versendet");
   }, [searchParams]);
 
   const openManualForm = () => {
@@ -77,6 +81,12 @@ export default function AngebotePage() {
 
   const totalNetto = filtered.reduce((sum, a) => sum + a.netto, 0);
   const totalBrutto = filtered.reduce((sum, a) => sum + a.brutto, 0);
+
+  const followUpByAngebot = Object.fromEntries(
+    followUps
+      .filter((f) => f.status === "offen")
+      .map((f) => [f.angebot_id, f]),
+  );
 
   return (
     <div className="space-y-6">
@@ -186,6 +196,7 @@ export default function AngebotePage() {
                   <th className="text-right text-xs font-semibold text-dark-500 uppercase px-4 py-3">Betrag</th>
                   <th className="text-left text-xs font-semibold text-dark-500 uppercase px-4 py-3">Gültig bis</th>
                   <th className="text-left text-xs font-semibold text-dark-500 uppercase px-4 py-3">Status</th>
+                  <th className="text-left text-xs font-semibold text-dark-500 uppercase px-4 py-3">Kunde gelesen</th>
                   <th className="text-right text-xs font-semibold text-dark-500 uppercase px-4 py-3">Aktionen</th>
                 </tr>
               </thead>
@@ -220,12 +231,30 @@ export default function AngebotePage() {
                       </div>
                     </td>
                     <td className="px-4 py-4">
-                      <StatusBadge status={angebot.status} />
+                      <div className="space-y-1.5">
+                        <StatusBadge status={angebot.status} />
+                        {followUpByAngebot[angebot.id] &&
+                          daysUntilFaellig(followUpByAngebot[angebot.id].faellig_am) <= 0 && (
+                            <span className="inline-flex items-center gap-1 rounded-md border border-red-500/30 bg-red-500/10 px-1.5 py-0.5 text-[11px] font-semibold text-red-300">
+                              <AlertTriangle className="h-3 w-3" />
+                              Nachfassen!
+                            </span>
+                          )}
+                      </div>
+                    </td>
+                    <td className="px-4 py-4">
+                      {angebot.status === "entwurf" ? (
+                        <span className="text-xs text-dark-600">—</span>
+                      ) : (
+                        <AngebotGelesenStatus gelesenAm={angebot.gelesen_am} compact />
+                      )}
                     </td>
                     <td className="px-4 py-4 table-actions-cell">
                       <div className="action-buttons-container">
                         {/* PDF Export */}
                         <PDFExport type="angebot" data={angebot} />
+
+                        <AngebotTrackLink angebotId={angebot.id} />
 
                         {/* E-Mail Senden */}
                         {angebot.kunde?.email && (
@@ -237,6 +266,8 @@ export default function AngebotePage() {
                             betreff={angebot.betreff}
                             beschreibung={angebot.beschreibung}
                             brutto={angebot.brutto}
+                            angebotId={angebot.id}
+                            kundeId={angebot.kunde_id}
                           />
                         )}
 
@@ -247,6 +278,8 @@ export default function AngebotePage() {
                             betreff={angebot.betreff}
                             beschreibung={angebot.beschreibung}
                             brutto={angebot.brutto}
+                            angebotId={angebot.id}
+                            kundeId={angebot.kunde_id}
                           />
                         </div>
 

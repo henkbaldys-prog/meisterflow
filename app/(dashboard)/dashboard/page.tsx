@@ -4,33 +4,46 @@ import { useEffect, useMemo, useState } from "react";
 import { useData } from "@/contexts/DataContext";
 import StatCard from "@/components/StatCard";
 import StatusBadge from "@/components/StatusBadge";
+import AngebotGelesenStatus from "@/components/AngebotGelesenStatus";
+import FollowUpDashboardCard from "@/components/FollowUpDashboardCard";
+import MahnungDashboardCard from "@/components/MahnungDashboardCard";
 import {
   Users,
   FileText,
-  Receipt,
   CalendarDays,
   Sparkles,
   AlertCircle,
+  EyeOff,
 } from "lucide-react";
 import { formatCurrency, formatDate, isToday, isWithinLast30Days, daysSince, getTimeGreeting, todayISO } from "@/lib/utils";
 import { getKundeName } from "@/lib/kunde-utils";
+import { isUnpaidRechnung } from "@/lib/mahnung";
 import Link from "next/link";
 
 export default function DashboardPage() {
-  const { kunden, angebote, rechnungen, termine, firmenprofil, profilUnvollstaendig, loading } = useData();
+  const { kunden, angebote, rechnungen, termine, firmenprofil, profilUnvollstaendig, loading, followUps } = useData();
   const [kiHinweis, setKiHinweis] = useState<string | null>(null);
   const [kiLoading, setKiLoading] = useState(false);
 
+  const ungeöffneteAngebote = useMemo(
+    () => angebote.filter((a) => a.status === "versendet" && !a.gelesen_am),
+    [angebote],
+  );
+
   const stats = useMemo(() => {
     const offeneAngebote = angebote.filter((a) => a.status === "entwurf").length;
-    const unbezahlteRechnungen = rechnungen.filter(
-      (r) => r.status === "versendet" || r.status === "ueberfaellig",
-    ).length;
+    const unbezahlteRechnungen = rechnungen.filter((r) => isUnpaidRechnung(r.status)).length;
     const heutigeTermine = termine.filter((t) => isToday(t.datum)).length;
     const neueKunden = kunden.filter((k) => isWithinLast30Days(k.created_at)).length;
 
-    return { offeneAngebote, unbezahlteRechnungen, heutigeTermine, neueKunden };
-  }, [angebote, rechnungen, termine, kunden]);
+    return {
+      offeneAngebote,
+      unbezahlteRechnungen,
+      heutigeTermine,
+      neueKunden,
+      ungeöffneteAngebote: ungeöffneteAngebote.length,
+    };
+  }, [angebote, rechnungen, termine, kunden, ungeöffneteAngebote]);
 
   const aeltesteOffeneAngebote = useMemo(
     () =>
@@ -48,13 +61,25 @@ export default function DashboardPage() {
     [angebote],
   );
 
+  const ungeöffneteFuerKi = useMemo(
+    () =>
+      ungeöffneteAngebote.slice(0, 5).map((a) => ({
+        nummer: a.nummer,
+        betreff: a.betreff,
+        kunde: a.kunde ? getKundeName(a.kunde) : "Unbekannt",
+        tage_offen: daysSince(a.created_at),
+        brutto: a.brutto,
+      })),
+    [ungeöffneteAngebote],
+  );
+
   const ueberfaelligeRechnungen = useMemo(() => {
     const today = todayISO();
     return rechnungen
       .filter(
         (r) =>
-          r.status === "ueberfaellig" ||
-          (r.status === "versendet" && r.faellig_am < today),
+          isUnpaidRechnung(r.status) &&
+          (r.status === "ueberfaellig" || r.faellig_am < today),
       )
       .slice(0, 5)
       .map((r) => ({
@@ -74,6 +99,13 @@ export default function DashboardPage() {
     return termine.filter((t) => t.datum >= today).slice(0, 5);
   }, [termine]);
 
+  const nachfassenTipp = useMemo(() => {
+    if (ungeöffneteAngebote.length === 0) return null;
+    const first = ungeöffneteAngebote[0];
+    const name = first.kunde ? getKundeName(first.kunde) : "dem Kunden";
+    return `Bei ${name} nachfassen?`;
+  }, [ungeöffneteAngebote]);
+
   useEffect(() => {
     if (loading) return;
 
@@ -88,6 +120,7 @@ export default function DashboardPage() {
             zahlen: stats,
             aeltesteOffeneAngebote,
             ueberfaelligeRechnungen,
+            ungeöffneteAngebote: ungeöffneteFuerKi,
           }),
         });
         const data = await res.json();
@@ -106,7 +139,7 @@ export default function DashboardPage() {
     };
 
     fetchKiHinweis();
-  }, [loading, stats, aeltesteOffeneAngebote, ueberfaelligeRechnungen]);
+  }, [loading, stats, aeltesteOffeneAngebote, ueberfaelligeRechnungen, ungeöffneteFuerKi]);
 
   const greeting = getTimeGreeting();
   const displayName = firmenprofil?.firmenname && !profilUnvollstaendig ? firmenprofil.firmenname : null;
@@ -121,7 +154,6 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-8">
-      {/* Guten Morgen */}
       <div>
         <h1 className="text-2xl font-bold text-white md:text-3xl">
           {displayName ? `${greeting}, ${displayName}!` : `${greeting}!`}
@@ -138,7 +170,42 @@ export default function DashboardPage() {
         )}
       </div>
 
-      {/* KI-Hinweis */}
+      {/* Mahnungen zuerst – must-have, mobil prominent */}
+      <MahnungDashboardCard />
+
+      {ungeöffneteAngebote.length > 0 && (
+        <Link
+          href="/angebote?filter=versendet"
+          className="card block border-amber-500/30 bg-amber-500/5 transition-colors hover:border-amber-500/50 min-h-[48px] touch-manipulation"
+        >
+          <div className="flex items-start gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-amber-500/30 bg-amber-500/10">
+              <EyeOff className="h-5 w-5 text-amber-400" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold text-amber-200">
+                {ungeöffneteAngebote.length === 1
+                  ? "1 Angebot noch nicht geöffnet"
+                  : `${ungeöffneteAngebote.length} Angebote noch nicht geöffnet`}
+              </p>
+              {nachfassenTipp && (
+                <p className="mt-1 text-sm text-dark-300">KI-Tipp: {nachfassenTipp}</p>
+              )}
+              <ul className="mt-2 space-y-1">
+                {ungeöffneteAngebote.slice(0, 3).map((a) => (
+                  <li key={a.id} className="truncate text-xs text-dark-400">
+                    {a.kunde ? getKundeName(a.kunde) : "Unbekannt"} · {a.nummer} ·{" "}
+                    {formatCurrency(a.brutto)}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </Link>
+      )}
+
+      <FollowUpDashboardCard followUps={followUps} />
+
       <div className="card border-brand-500/20 bg-brand-500/5">
         <div className="flex items-start gap-3">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-brand-500/20 bg-brand-500/10">
@@ -150,6 +217,11 @@ export default function DashboardPage() {
               <p className="mt-1 text-sm text-dark-400">Analysiere deine Zahlen...</p>
             ) : kiHinweis ? (
               <p className="mt-1 text-sm text-dark-200">{kiHinweis}</p>
+            ) : nachfassenTipp ? (
+              <p className="mt-1 text-sm text-dark-200">
+                {ungeöffneteAngebote.length} Angebot
+                {ungeöffneteAngebote.length === 1 ? "" : "e"} noch nicht geöffnet – {nachfassenTipp}
+              </p>
             ) : (
               <p className="mt-1 text-sm text-dark-500">
                 Alles im grünen Bereich – oder KI gerade nicht erreichbar.
@@ -159,7 +231,6 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Stats Grid – echte Zahlen, klickbar */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Link
           href="/angebote?filter=offen"
@@ -211,7 +282,6 @@ export default function DashboardPage() {
         </Link>
       </div>
 
-      {/* Main Content Grid */}
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="card">
           <div className="mb-4 flex items-center justify-between">
@@ -227,16 +297,24 @@ export default function DashboardPage() {
               recentAngebote.map((angebot) => (
                 <div
                   key={angebot.id}
-                  className="flex items-center justify-between rounded-lg bg-dark-900 p-3 transition-colors hover:bg-dark-800"
+                  className="flex items-center justify-between gap-3 rounded-lg bg-dark-900 p-3 transition-colors hover:bg-dark-800"
                 >
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium text-white">{angebot.betreff}</p>
                     <p className="text-xs text-dark-500">
-                      {angebot.kunde ? getKundeName(angebot.kunde) : "Unbekannt"} • {formatDate(angebot.created_at)}
+                      {angebot.kunde ? getKundeName(angebot.kunde) : "Unbekannt"} •{" "}
+                      {formatDate(angebot.created_at)}
                     </p>
+                    {angebot.status !== "entwurf" && (
+                      <div className="mt-1">
+                        <AngebotGelesenStatus gelesenAm={angebot.gelesen_am} compact />
+                      </div>
+                    )}
                   </div>
                   <div className="flex shrink-0 items-center gap-3">
-                    <span className="text-sm font-medium text-white">{formatCurrency(angebot.brutto)}</span>
+                    <span className="text-sm font-medium text-white">
+                      {formatCurrency(angebot.brutto)}
+                    </span>
                     <StatusBadge status={angebot.status} />
                   </div>
                 </div>
@@ -264,11 +342,14 @@ export default function DashboardPage() {
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium text-white">{rechnung.betreff}</p>
                     <p className="text-xs text-dark-500">
-                      {rechnung.kunde ? getKundeName(rechnung.kunde) : "Unbekannt"} • Fällig: {formatDate(rechnung.faellig_am)}
+                      {rechnung.kunde ? getKundeName(rechnung.kunde) : "Unbekannt"} • Fällig:{" "}
+                      {formatDate(rechnung.faellig_am)}
                     </p>
                   </div>
                   <div className="flex shrink-0 items-center gap-3">
-                    <span className="text-sm font-medium text-white">{formatCurrency(rechnung.brutto)}</span>
+                    <span className="text-sm font-medium text-white">
+                      {formatCurrency(rechnung.brutto)}
+                    </span>
                     <StatusBadge status={rechnung.status} />
                   </div>
                 </div>
@@ -278,7 +359,6 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Upcoming Termine */}
       <div className="card">
         <div className="mb-4 flex items-center justify-between">
           <h3 className="text-lg font-semibold text-white">Kommende Termine</h3>
