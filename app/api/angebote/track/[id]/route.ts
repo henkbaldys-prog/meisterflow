@@ -36,7 +36,11 @@ export async function GET(
     }
 
     const angebot = data as TrackedAngebot;
-    const html = renderAngebotPublicHtml(angebot);
+    const appUrl =
+      process.env.NEXT_PUBLIC_APP_URL ||
+      _req.nextUrl.origin ||
+      "http://localhost:3000";
+    const html = renderAngebotPublicHtml(angebot, { appUrl });
 
     return new NextResponse(html, {
       status: 200,

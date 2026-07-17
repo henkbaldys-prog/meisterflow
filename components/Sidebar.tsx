@@ -17,6 +17,7 @@ import {
   Menu,
   X,
   Settings,
+  Megaphone,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 
@@ -26,6 +27,7 @@ const navItems = [
   { href: "/angebote", label: "Angebote", icon: FileText },
   { href: "/rechnungen", label: "Rechnungen", icon: Receipt },
   { href: "/termine", label: "Termine", icon: CalendarDays },
+  { href: "/marketing", label: "Marketing", icon: Megaphone },
   { href: "/einstellungen", label: "Einstellungen", icon: Settings },
 ];
 

@@ -1,0 +1,21 @@
+{
+  "id": "vid-demo-local",
+  "created_at": "2026-07-17T18:50:00.000Z",
+  "gewerk": "Elektriker",
+  "thema": "Angebote nachfassen",
+  "laenge_sek": 30,
+  "plattform": "Reels",
+  "hook": "Angebote versanden? Das hier ändert alles.",
+  "szenen": [
+    { "zeit": "0-3s", "bild": "Handy mit Angebot", "text_on_screen": "Angebot gesendet…" },
+    { "zeit": "3-12s", "bild": "Dashboard ungeöffnet", "text_on_screen": "Noch nicht geöffnet" },
+    { "zeit": "12-25s", "bild": "WhatsApp Nachfassen", "text_on_screen": "Nachfassen in 1 Klick" },
+    { "zeit": "25-30s", "bild": "Logo", "text_on_screen": "MeisterFlow" }
+  ],
+  "sprechertext": "Hey Elektriker – Angebot raus, dann Funkstille? Mit MeisterFlow siehst du Öffnungen und fasst in einem Klick nach.",
+  "captions": ["Funkstille nach Angebot?", "Öffnung tracken", "Nachfassen in 1 Klick", "Link in Bio"],
+  "caption_post": "Weniger versandete Angebote.\n\nTracking + Nachfassen für Handwerker.\n\n👉 Link in Bio",
+  "hashtags": ["#Handwerk", "#Elektriker", "#MeisterFlow"],
+  "checklist": ["9:16 filmen", "Hook groß", "Captions", "Cover", "Link in Bio"],
+  "capcut_tipp": "4 Folien, Voiceover DE, Export 1080x1920."
+}

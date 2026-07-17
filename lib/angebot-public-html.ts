@@ -67,7 +67,14 @@ function kundeAdresse(kunde: PublicKunde): string {
 }
 
 /** Mobile-freundliche HTML-Ansicht des Angebots (kein Download-Zwang). */
-export function renderAngebotPublicHtml(angebot: TrackedAngebot): string {
+export function renderAngebotPublicHtml(
+  angebot: TrackedAngebot,
+  opts?: { appUrl?: string },
+): string {
+  const appUrl = (opts?.appUrl || process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").replace(
+    /\/$/,
+    "",
+  );
   const firmaName = angebot.firma?.firmenname || "MeisterFlow";
   const firmaAdresse = angebot.firma
     ? [angebot.firma.strasse, [angebot.firma.plz, angebot.firma.ort].filter(Boolean).join(" ")]
@@ -201,6 +208,29 @@ export function renderAngebotPublicHtml(angebot: TrackedAngebot): string {
       color: var(--muted);
       font-size: .8rem;
     }
+    .powered {
+      margin-top: 20px;
+      padding: 16px 20px 20px;
+      border-top: 1px solid var(--line);
+      text-align: center;
+    }
+    .powered p {
+      margin: 0 0 10px;
+      color: var(--muted);
+      font-size: .75rem;
+    }
+    .powered a {
+      display: inline-block;
+      background: var(--brand);
+      color: #fff;
+      text-decoration: none;
+      font-size: .875rem;
+      font-weight: 600;
+      padding: 10px 16px;
+      border-radius: 10px;
+      min-height: 44px;
+      line-height: 24px;
+    }
   </style>
 </head>
 <body>
@@ -250,6 +280,10 @@ export function renderAngebotPublicHtml(angebot: TrackedAngebot): string {
     </div>
     <div class="footer">
       Bei Fragen melden Sie sich gerne bei ${escapeHtml(firmaName)}.
+    </div>
+    <div class="powered">
+      <p>Erstellt mit MeisterFlow – Angebote, Follow-ups &amp; Mahnungen für Handwerker</p>
+      <a href="${escapeHtml(appUrl)}?ref=angebot">Kostenlos testen</a>
     </div>
   </div>
 </body>

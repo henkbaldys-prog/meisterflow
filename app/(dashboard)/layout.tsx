@@ -6,6 +6,7 @@ import Sidebar from "@/components/Sidebar";
 import FirmenprofilBanner from "@/components/FirmenprofilBanner";
 import { useEffect } from "react";
 import { DataProvider } from "@/contexts/DataContext";
+import OnboardingMailTrigger from "@/components/OnboardingMailTrigger";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -26,6 +27,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <DataProvider>
+      <OnboardingMailTrigger />
       <div className="min-h-screen bg-dark-950">
         <Sidebar />
         <main className="md:ml-64 min-h-screen pt-16 md:pt-0">

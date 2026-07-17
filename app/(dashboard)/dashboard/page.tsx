@@ -7,6 +7,7 @@ import StatusBadge from "@/components/StatusBadge";
 import AngebotGelesenStatus from "@/components/AngebotGelesenStatus";
 import FollowUpDashboardCard from "@/components/FollowUpDashboardCard";
 import MahnungDashboardCard from "@/components/MahnungDashboardCard";
+import KollegenEinladen from "@/components/KollegenEinladen";
 import {
   Users,
   FileText,
@@ -172,6 +173,8 @@ export default function DashboardPage() {
 
       {/* Mahnungen zuerst – must-have, mobil prominent */}
       <MahnungDashboardCard />
+
+      <KollegenEinladen />
 
       {ungeöffneteAngebote.length > 0 && (
         <Link
