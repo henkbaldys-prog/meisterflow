@@ -12,6 +12,8 @@ interface EmailSenderProps {
   betreff: string;
   beschreibung: string;
   brutto: number;
+  /** Für Angebot-Tracking-Link */
+  angebotId?: string;
 }
 
 export default function EmailSender({
@@ -22,6 +24,7 @@ export default function EmailSender({
   betreff,
   beschreibung,
   brutto,
+  angebotId,
 }: EmailSenderProps) {
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -36,6 +39,11 @@ export default function EmailSender({
       ? `Angebot ${nummer}: ${betreff}`
       : `Rechnung ${nummer}: ${betreff}`;
 
+    const trackUrl =
+      isAngebot && angebotId
+        ? `${typeof window !== "undefined" ? window.location.origin : ""}/api/angebote/track/${angebotId}`
+        : "";
+
     const defaultBody = isAngebot
       ? `Sehr geehrte/r ${kundenName},
 
@@ -47,7 +55,7 @@ ${beschreibung}
 
 Gesamtbetrag: ${brutto.toFixed(2)} € (inkl. MwSt.)
 
-Das Angebot ist 30 Tage gültig. Bei Fragen stehe ich Ihnen gerne zur Verfügung.
+${trackUrl ? `Angebot online öffnen:\n${trackUrl}\n\n` : ""}Das Angebot ist 30 Tage gültig. Bei Fragen stehe ich Ihnen gerne zur Verfügung.
 
 Mit freundlichen Grüßen
 Ihr Team von MeisterFlow`
@@ -112,7 +120,15 @@ Ihr Team von MeisterFlow`;
       <h1>MeisterFlow</h1>
     </div>
     <div style="background: #f8fafc; padding: 30px; margin: 20px 0;">
-      ${body.replace(/\n/g, "<br>")}
+      ${body
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(
+          /(https?:\/\/[^\s<]+)/g,
+          '<a href="$1" style="color:#2563eb;word-break:break-all;">$1</a>',
+        )
+        .replace(/\n/g, "<br>")}
     </div>
   </div>
 </body>

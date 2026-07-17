@@ -121,19 +121,22 @@ Antworte in 1-3 Sätzen, locker und freundlich.`;
 export async function generateTagesuebersicht(
   zahlen: Record<string, number>,
   aeltesteOffeneAngebote: unknown[],
+  ungeleseneAngebote: unknown[],
   ueberfaelligeRechnungen: unknown[],
 ): Promise<string> {
   const prompt = `Du bist Geschäftsführer-Assistent für einen Handwerker.
 
 Aktuelle Zahlen: ${JSON.stringify(zahlen)}
-Liste der 3 ältesten offenen Angebote: ${JSON.stringify(aeltesteOffeneAngebote)}
+Liste der 3 ältesten offenen Angebote (Entwurf): ${JSON.stringify(aeltesteOffeneAngebote)}
+Liste der versendeten, noch nicht geöffneten Angebote: ${JSON.stringify(ungeleseneAngebote)}
 Liste der überfälligen Rechnungen: ${JSON.stringify(ueberfaelligeRechnungen)}
 
 Gib EINE konkrete, pragmatische Handlungsempfehlung in 1-2 Sätzen.
+Priorität: 1) überfällige Rechnungen, 2) nicht geöffnete Angebote (Nachfassen), 3) alte Entwürfe.
 Beispiele:
+- "3 Angebote noch nicht geöffnet – bei Müller nachfassen?"
 - "Angebot Nr. 14 für Müller Bau sollten Sie heute abschicken – wartet seit 5 Tagen."
 - "Rechnung Nr. 7 über 2.450 € ist seit 3 Tagen überfällig – Mahnung prüfen?"
-- "Heute 14:30 Termin bei Schmidt – Adresse: Musterstraße 12"
 
 Sei direkt, nicht zu formell. Max. 2 Sätze.`;
 

@@ -33,6 +33,8 @@
 5. Klicke "Run"
 6. Du solltest "Success. No rows returned" sehen
 
+**Bestehende Datenbank?** Zusätzlich `supabase/angebot-tracking.sql` im SQL Editor ausführen (Spalte `gelesen_am` + Tracking-Funktion).
+
 ### SCHWERPUNKT 3: API-Keys holen (5 Minuten)
 
 1. Im Supabase Dashboard → Project Settings → API

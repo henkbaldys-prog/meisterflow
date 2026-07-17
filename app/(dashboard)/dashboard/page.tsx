@@ -4,13 +4,14 @@ import { useEffect, useMemo, useState } from "react";
 import { useData } from "@/contexts/DataContext";
 import StatCard from "@/components/StatCard";
 import StatusBadge from "@/components/StatusBadge";
+import GelesenStatus from "@/components/GelesenStatus";
 import {
   Users,
   FileText,
-  Receipt,
   CalendarDays,
   Sparkles,
   AlertCircle,
+  Eye,
 } from "lucide-react";
 import { formatCurrency, formatDate, isToday, isWithinLast30Days, daysSince, getTimeGreeting, todayISO } from "@/lib/utils";
 import { getKundeName } from "@/lib/kunde-utils";
@@ -23,13 +24,14 @@ export default function DashboardPage() {
 
   const stats = useMemo(() => {
     const offeneAngebote = angebote.filter((a) => a.status === "entwurf").length;
+    const ungelesenAngebote = angebote.filter((a) => a.status === "versendet" && !a.gelesen_am).length;
     const unbezahlteRechnungen = rechnungen.filter(
       (r) => r.status === "versendet" || r.status === "ueberfaellig",
     ).length;
     const heutigeTermine = termine.filter((t) => isToday(t.datum)).length;
     const neueKunden = kunden.filter((k) => isWithinLast30Days(k.created_at)).length;
 
-    return { offeneAngebote, unbezahlteRechnungen, heutigeTermine, neueKunden };
+    return { offeneAngebote, ungelesenAngebote, unbezahlteRechnungen, heutigeTermine, neueKunden };
   }, [angebote, rechnungen, termine, kunden]);
 
   const aeltesteOffeneAngebote = useMemo(
@@ -43,6 +45,22 @@ export default function DashboardPage() {
           betreff: a.betreff,
           kunde: a.kunde ? getKundeName(a.kunde) : "Unbekannt",
           tage_offen: daysSince(a.created_at),
+          brutto: a.brutto,
+        })),
+    [angebote],
+  );
+
+  const ungeleseneAngeboteListe = useMemo(
+    () =>
+      angebote
+        .filter((a) => a.status === "versendet" && !a.gelesen_am)
+        .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+        .slice(0, 5)
+        .map((a) => ({
+          nummer: a.nummer,
+          betreff: a.betreff,
+          kunde: a.kunde ? getKundeName(a.kunde) : "Unbekannt",
+          tage_seit_versand: daysSince(a.created_at),
           brutto: a.brutto,
         })),
     [angebote],
@@ -87,6 +105,7 @@ export default function DashboardPage() {
             type: "tagesuebersicht",
             zahlen: stats,
             aeltesteOffeneAngebote,
+            ungeleseneAngebote: ungeleseneAngeboteListe,
             ueberfaelligeRechnungen,
           }),
         });
@@ -106,7 +125,7 @@ export default function DashboardPage() {
     };
 
     fetchKiHinweis();
-  }, [loading, stats, aeltesteOffeneAngebote, ueberfaelligeRechnungen]);
+  }, [loading, stats, aeltesteOffeneAngebote, ungeleseneAngeboteListe, ueberfaelligeRechnungen]);
 
   const greeting = getTimeGreeting();
   const displayName = firmenprofil?.firmenname && !profilUnvollstaendig ? firmenprofil.firmenname : null;
@@ -159,8 +178,29 @@ export default function DashboardPage() {
         </div>
       </div>
 
+      {stats.ungelesenAngebote > 0 && (
+        <Link
+          href="/angebote?filter=ungelesen"
+          className="block rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 transition-colors hover:bg-amber-500/15 min-h-[48px] touch-manipulation"
+        >
+          <div className="flex items-start gap-3">
+            <Eye className="mt-0.5 h-5 w-5 shrink-0 text-amber-300" />
+            <div>
+              <p className="font-semibold text-amber-200">
+                {stats.ungelesenAngebote} Angebot{stats.ungelesenAngebote === 1 ? "" : "e"} noch nicht geöffnet
+              </p>
+              <p className="mt-1 text-sm text-amber-100/80">
+                {ungeleseneAngeboteListe[0]
+                  ? `Bei ${ungeleseneAngeboteListe[0].kunde} nachfassen?`
+                  : "Kunde hat den Link noch nicht angeklickt."}
+              </p>
+            </div>
+          </div>
+        </Link>
+      )}
+
       {/* Stats Grid – echte Zahlen, klickbar */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         <Link
           href="/angebote?filter=offen"
           className="block min-h-[48px] select-none touch-manipulation rounded-xl transition-transform hover:scale-[1.01] active:scale-[0.99] focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-500"
@@ -171,6 +211,22 @@ export default function DashboardPage() {
             subtitle="Status: Entwurf"
             icon={FileText}
             color="brand"
+          />
+        </Link>
+        <Link
+          href="/angebote?filter=ungelesen"
+          className="block min-h-[48px] select-none touch-manipulation rounded-xl transition-transform hover:scale-[1.01] active:scale-[0.99] focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-500"
+        >
+          <StatCard
+            title="Noch nicht geöffnet"
+            value={stats.ungelesenAngebote.toString()}
+            subtitle={
+              stats.ungelesenAngebote > 0 && ungeleseneAngeboteListe[0]
+                ? `z.B. bei ${ungeleseneAngeboteListe[0].kunde} nachfassen?`
+                : "Versendet, Kunde hat nicht geöffnet"
+            }
+            icon={Eye}
+            color="yellow"
           />
         </Link>
         <Link
@@ -224,7 +280,7 @@ export default function DashboardPage() {
             {recentAngebote.length === 0 ? (
               <p className="text-sm text-dark-500">Noch keine Angebote erstellt.</p>
             ) : (
-              recentAngebote.map((angebot) => (
+                  recentAngebote.map((angebot) => (
                 <div
                   key={angebot.id}
                   className="flex items-center justify-between rounded-lg bg-dark-900 p-3 transition-colors hover:bg-dark-800"
@@ -234,6 +290,9 @@ export default function DashboardPage() {
                     <p className="text-xs text-dark-500">
                       {angebot.kunde ? getKundeName(angebot.kunde) : "Unbekannt"} • {formatDate(angebot.created_at)}
                     </p>
+                    {(angebot.status === "versendet" || !!angebot.gelesen_am) && (
+                      <GelesenStatus gelesenAm={angebot.gelesen_am} />
+                    )}
                   </div>
                   <div className="flex shrink-0 items-center gap-3">
                     <span className="text-sm font-medium text-white">{formatCurrency(angebot.brutto)}</span>
