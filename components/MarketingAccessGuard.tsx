@@ -49,24 +49,21 @@ export function MarketingAccessGuard({ children }: { children: ReactNode }) {
 
   if (!ready) {
     return (
-      <div className="flex min-h-[50vh] items-center justify-center text-dark-500 text-sm">
-        Laden…
+      <div className="flex min-h-[50vh] items-center justify-center">
+        <div className="spinner" aria-label="Laden" />
       </div>
     );
   }
 
   if (!unlocked) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-dark-950 px-4">
-        <form
-          onSubmit={unlock}
-          className="w-full max-w-sm space-y-5 rounded-2xl border border-dark-800 bg-dark-900 p-6 shadow-xl"
-        >
+      <div className="modal-backdrop !fixed">
+        <form onSubmit={unlock} className="modal-panel max-w-sm space-y-5">
           <div className="flex flex-col items-center text-center">
-            <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-brand-600/20 text-brand-300">
-              <Lock className="h-5 w-5" />
+            <div className="icon-box mb-3 h-12 w-12">
+              <Lock className="h-5 w-5" strokeWidth={1.75} />
             </div>
-            <h1 className="text-xl font-bold text-white">Marketing-Studio</h1>
+            <h1 className="text-xl font-bold text-dark-50">Marketing-Studio</h1>
             <p className="mt-2 text-sm text-dark-400">
               Dieser Bereich ist geschützt. Bitte Code eingeben:
             </p>
@@ -85,19 +82,16 @@ export function MarketingAccessGuard({ children }: { children: ReactNode }) {
                 setError(false);
               }}
               placeholder="••••••"
-              className="w-full rounded-xl border border-dark-700 bg-dark-950 px-4 py-4 text-center text-2xl tracking-[0.4em] text-white outline-none focus:border-brand-500"
+              className="input text-center text-2xl tracking-[0.4em]"
               style={{ fontSize: "24px" }}
               aria-label="6-stelliger Zugangscode"
             />
             {error && (
-              <p className="mt-2 text-center text-sm font-medium text-red-400">Falscher Code</p>
+              <p className="mt-2 text-center text-sm font-medium text-danger">Falscher Code</p>
             )}
           </div>
 
-          <button
-            type="submit"
-            className="btn-primary w-full justify-center min-h-[52px] text-base"
-          >
+          <button type="submit" className="btn-primary w-full min-h-[52px] justify-center text-base">
             Entsperren
           </button>
         </form>
@@ -106,14 +100,10 @@ export function MarketingAccessGuard({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="section-gap page-enter">
       {children}
-      <div className="pt-4">
-        <button
-          type="button"
-          onClick={resetAccess}
-          className="text-xs text-dark-600 hover:text-dark-400 underline-offset-2 hover:underline"
-        >
+      <div className="pt-2">
+        <button type="button" onClick={resetAccess} className="btn-ghost text-xs text-dark-600">
           Zugang zurücksetzen
         </button>
       </div>

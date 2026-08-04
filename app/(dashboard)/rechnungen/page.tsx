@@ -19,6 +19,8 @@ import {
   needsMahnung,
 } from "@/lib/mahnung";
 import toast from "react-hot-toast";
+import EmptyState from "@/components/EmptyState";
+import { TableSkeleton } from "@/components/Skeleton";
 
 export default function RechnungenPage() {
   const searchParams = useSearchParams();
@@ -149,10 +151,10 @@ export default function RechnungenPage() {
     .reduce((sum, r) => sum + r.brutto, 0);
 
   return (
-    <div className="space-y-6">
+    <div className="section-gap page-enter">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-white">Rechnungen</h1>
+          <h1 className="text-3xl font-bold text-dark-50">Rechnungen</h1>
           <p className="text-dark-500 mt-1">
             {rechnungen.length} Rechnungen • Offen: {formatCurrency(totalOffen)} • Bezahlt: {formatCurrency(totalBezahlt)}
           </p>
@@ -195,24 +197,28 @@ export default function RechnungenPage() {
 
       <div className="card overflow-hidden">
         {loading ? (
-          <div className="p-12 text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-500 mx-auto"></div>
-            <p className="text-dark-500 mt-3">Lade Rechnungen...</p>
-          </div>
+          <TableSkeleton rows={6} />
         ) : filtered.length === 0 ? (
-          <div className="p-12 text-center">
-            <Receipt className="w-12 h-12 text-dark-700 mx-auto mb-3" />
-            <p className="text-dark-500">
-              {search || statusFilter !== "alle"
-                ? "Keine Rechnungen gefunden."
-                : "Noch keine Rechnungen. Erstelle deine erste Rechnung!"}
-            </p>
-          </div>
+          <EmptyState
+            icon={Receipt}
+            title={
+              search || statusFilter !== "alle"
+                ? "Keine Rechnungen gefunden"
+                : "Noch keine Rechnungen"
+            }
+            description={
+              search || statusFilter !== "alle"
+                ? "Filter oder Suche anpassen."
+                : "Erstelle deine erste Rechnung – oder aus einem Angebot."
+            }
+            actionLabel={search || statusFilter !== "alle" ? undefined : "Rechnung erstellen"}
+            onAction={search || statusFilter !== "alle" ? undefined : () => setShowForm(true)}
+          />
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <table className="table-enterprise">
               <thead>
-                <tr className="bg-dark-900 border-b border-dark-800">
+                <tr>
                   <th className="text-left text-xs font-semibold text-dark-500 uppercase px-4 py-3">Nummer</th>
                   <th className="text-left text-xs font-semibold text-dark-500 uppercase px-4 py-3">Kunde</th>
                   <th className="text-left text-xs font-semibold text-dark-500 uppercase px-4 py-3">Betreff</th>

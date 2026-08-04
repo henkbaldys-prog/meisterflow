@@ -18,8 +18,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-dark-950 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-500"></div>
+      <div className="app-shell flex min-h-screen items-center justify-center">
+        <div className="spinner" aria-label="Laden" />
       </div>
     );
   }
@@ -28,10 +28,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <DataProvider>
       <OnboardingMailTrigger />
-      <div className="min-h-screen bg-dark-950">
+      <div className="app-shell min-h-screen">
         <Sidebar />
-        <main className="md:ml-64 min-h-screen pt-16 md:pt-0">
-          <div className="p-4 md:p-6 lg:p-8">
+        <main className="min-h-screen pt-16 md:ml-[240px] md:pt-0">
+          <div className="page-enter mx-auto max-w-7xl space-y-6 p-4 md:p-6 lg:p-8">
             <FirmenprofilBanner />
             {children}
           </div>

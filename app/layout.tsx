@@ -1,6 +1,14 @@
 import type { Metadata } from "next";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "react-hot-toast";
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+  weight: ["400", "500", "600", "700"],
+});
 
 export const metadata: Metadata = {
   title: "MeisterFlow - KI-Automation für Handwerker",
@@ -17,9 +25,20 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="de">
-      <body className="bg-dark-950 text-dark-100 antialiased">
-        <Toaster position="top-right" />
+    <html lang="de" className={inter.variable}>
+      <body className="font-sans bg-dark-950 text-dark-50 antialiased">
+        <Toaster
+          position="top-right"
+          toastOptions={{
+            className: "animate-toast-in !bg-dark-900 !text-dark-50 !border !border-white/[0.08] !shadow-soft !rounded-card !text-sm",
+            success: {
+              iconTheme: { primary: "#10B981", secondary: "#111827" },
+            },
+            error: {
+              iconTheme: { primary: "#EF4444", secondary: "#111827" },
+            },
+          }}
+        />
         {children}
       </body>
     </html>

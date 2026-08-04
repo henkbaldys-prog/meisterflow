@@ -18,6 +18,8 @@ import { formatCurrency, formatDate } from "@/lib/utils";
 import { daysUntilFaellig } from "@/lib/follow-up";
 import { AngebotInitialData } from "@/types";
 import toast from "react-hot-toast";
+import EmptyState from "@/components/EmptyState";
+import { TableSkeleton } from "@/components/Skeleton";
 
 export default function AngebotePage() {
   const router = useRouter();
@@ -89,11 +91,11 @@ export default function AngebotePage() {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="section-gap page-enter">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-white">Angebote</h1>
+          <h1 className="text-3xl font-bold text-dark-50">Angebote</h1>
           <p className="text-dark-500 mt-1">
             {angebote.length} Angebote • Gesamtwert: {formatCurrency(totalBrutto)}
           </p>
@@ -172,24 +174,28 @@ export default function AngebotePage() {
       {/* Table */}
       <div className="card overflow-hidden">
         {loading ? (
-          <div className="p-12 text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-500 mx-auto"></div>
-            <p className="text-dark-500 mt-3">Lade Angebote...</p>
-          </div>
+          <TableSkeleton rows={6} />
         ) : filtered.length === 0 ? (
-          <div className="p-12 text-center">
-            <FileText className="w-12 h-12 text-dark-700 mx-auto mb-3" />
-            <p className="text-dark-500">
-              {search || statusFilter !== "alle"
-                ? "Keine Angebote gefunden."
-                : "Noch keine Angebote. Erstelle dein erstes Angebot!"}
-            </p>
-          </div>
+          <EmptyState
+            icon={FileText}
+            title={
+              search || statusFilter !== "alle"
+                ? "Keine Angebote gefunden"
+                : "Noch keine Angebote"
+            }
+            description={
+              search || statusFilter !== "alle"
+                ? "Filter oder Suche anpassen."
+                : "Per Sprache, Foto oder manuell – in unter 30 Sekunden fertig."
+            }
+            actionLabel={search || statusFilter !== "alle" ? undefined : "Angebot erstellen"}
+            onAction={search || statusFilter !== "alle" ? undefined : openManualForm}
+          />
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <table className="table-enterprise">
               <thead>
-                <tr className="bg-dark-900 border-b border-dark-800">
+                <tr>
                   <th className="text-left text-xs font-semibold text-dark-500 uppercase px-4 py-3">Nummer</th>
                   <th className="text-left text-xs font-semibold text-dark-500 uppercase px-4 py-3">Kunde</th>
                   <th className="text-left text-xs font-semibold text-dark-500 uppercase px-4 py-3">Betreff</th>

@@ -6,6 +6,8 @@ import KundenForm from "@/components/KundenForm";
 import { getKundeName, getKundeLabel, formatKundeAdresse } from "@/lib/kunde-utils";
 import { Plus, Search, Trash2, Mail, Phone, MapPin, User } from "lucide-react";
 import toast from "react-hot-toast";
+import EmptyState from "@/components/EmptyState";
+import { TableSkeleton } from "@/components/Skeleton";
 
 export default function KundenPage() {
   const { kunden, loading, deleteKunde } = useData();
@@ -37,10 +39,10 @@ export default function KundenPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="section-gap page-enter">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white md:text-3xl">Kunden</h1>
+          <h1 className="text-2xl font-bold text-dark-50 md:text-3xl">Kunden</h1>
           <p className="text-dark-500 mt-1">{kunden.length} Kunden gesamt</p>
         </div>
         <button onClick={() => setShowForm(true)} className="btn-primary min-h-[48px]">
@@ -62,22 +64,24 @@ export default function KundenPage() {
 
       <div className="card overflow-hidden">
         {loading ? (
-          <div className="p-12 text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-500 mx-auto" />
-            <p className="text-dark-500 mt-3">Lade Kunden...</p>
-          </div>
+          <TableSkeleton rows={5} />
         ) : filtered.length === 0 ? (
-          <div className="p-12 text-center">
-            <User className="w-12 h-12 text-dark-700 mx-auto mb-3" />
-            <p className="text-dark-500">
-              {search ? "Keine Kunden gefunden." : "Noch keine Kunden – Name + Telefon reichen!"}
-            </p>
-          </div>
+          <EmptyState
+            icon={User}
+            title={search ? "Keine Kunden gefunden" : "Noch keine Kunden"}
+            description={
+              search
+                ? "Andere Suche versuchen oder Filter zurücksetzen."
+                : "Name + Telefon reichen – leg deinen ersten Kunden an."
+            }
+            actionLabel={search ? undefined : "Neuer Kunde"}
+            onAction={search ? undefined : () => setShowForm(true)}
+          />
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
+          <div className="overflow-x-auto -mx-0">
+            <table className="table-enterprise">
               <thead>
-                <tr className="bg-dark-900 border-b border-dark-800">
+                <tr>
                   <th className="text-left text-xs font-semibold text-dark-500 uppercase px-4 py-3">Name</th>
                   <th className="text-left text-xs font-semibold text-dark-500 uppercase px-4 py-3">Telefon</th>
                   <th className="text-left text-xs font-semibold text-dark-500 uppercase px-4 py-3 hidden md:table-cell">Details</th>

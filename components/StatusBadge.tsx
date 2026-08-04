@@ -15,7 +15,7 @@ const statusConfig: Record<string, { label: string; className: string }> = {
 };
 
 export default function StatusBadge({ status }: { status: string }) {
-  const config = statusConfig[status] || { label: status, className: "badge-purple" };
+  const config = statusConfig[status] || { label: status, className: "badge-blue" };
   return (
     <span
       className={`badge ${config.className} relative z-20 pointer-events-auto`}

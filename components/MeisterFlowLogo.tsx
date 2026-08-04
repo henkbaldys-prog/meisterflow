@@ -33,7 +33,7 @@ export default function MeisterFlowLogo({
   return (
     <div
       className={cn(
-        "inline-flex shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-white/20",
+        "inline-flex shrink-0 items-center justify-center overflow-hidden rounded-btn bg-white shadow-soft ring-1 ring-white/10",
         iconOnly ? "p-0.5" : "px-2 py-1",
         !iconOnly && config.box,
         className,

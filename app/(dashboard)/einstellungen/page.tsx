@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useData } from "@/contexts/DataContext";
 import { FirmenprofilInput } from "@/contexts/DataContext";
-import { Save, Building2, AlertCircle, ImagePlus, Loader2, Trash2 } from "lucide-react";
+import { Save, Building2, AlertCircle, ImagePlus, Loader2, Trash2, Globe } from "lucide-react";
+import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { uploadFirmenLogo, removeFirmenLogo } from "@/lib/upload-logo";
 import toast from "react-hot-toast";
@@ -154,7 +155,7 @@ export default function EinstellungenPage() {
   if (loading) {
     return (
       <div className="flex h-96 items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-brand-500" />
+        <div className="spinner" aria-label="Laden" />
       </div>
     );
   }
@@ -175,6 +176,21 @@ export default function EinstellungenPage() {
           </p>
         </div>
       )}
+
+      <Link
+        href="/einstellungen/website"
+        className="card-interactive flex items-center gap-4 !p-5"
+      >
+        <div className="icon-box">
+          <Globe className="h-5 w-5" strokeWidth={1.75} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="font-semibold text-dark-50">Meine Website</p>
+          <p className="text-sm text-dark-400">
+            Vorlage wählen, Texte anpassen und unter /w/dein-name veröffentlichen
+          </p>
+        </div>
+      </Link>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Firmendaten */}

@@ -11,6 +11,8 @@ import { formatDate, isToday } from "@/lib/utils";
 import { getKundeName } from "@/lib/kunde-utils";
 import { TerminInitialData } from "@/types";
 import toast from "react-hot-toast";
+import EmptyState from "@/components/EmptyState";
+import { TableSkeleton } from "@/components/Skeleton";
 
 export default function TerminePage() {
   const searchParams = useSearchParams();
@@ -78,11 +80,11 @@ export default function TerminePage() {
   const sortedDates = Object.keys(grouped).sort();
 
   return (
-    <div className="space-y-6">
+    <div className="section-gap page-enter">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-white">Termine</h1>
+          <h1 className="text-3xl font-bold text-dark-50">Termine</h1>
           <p className="text-dark-500 mt-1">{termine.length} Termine insgesamt</p>
         </div>
         <button onClick={openManualForm} className="btn-primary min-h-[48px]">
@@ -159,18 +161,28 @@ export default function TerminePage() {
       {/* Termine List */}
       <div className="space-y-4">
         {loading ? (
-          <div className="card p-12 text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-500 mx-auto"></div>
-            <p className="text-dark-500 mt-3">Lade Termine...</p>
-          </div>
+          <TableSkeleton rows={4} />
         ) : filtered.length === 0 ? (
-          <div className="card p-12 text-center">
-            <CalendarDays className="w-12 h-12 text-dark-700 mx-auto mb-3" />
-            <p className="text-dark-500">
-              {search || statusFilter !== "alle" || dateFilter
-                ? "Keine Termine gefunden."
-                : "Noch keine Termine. Plane deinen ersten Termin!"}
-            </p>
+          <div className="card">
+            <EmptyState
+              icon={CalendarDays}
+              title={
+                search || statusFilter !== "alle" || dateFilter
+                  ? "Keine Termine gefunden"
+                  : "Noch keine Termine"
+              }
+              description={
+                search || statusFilter !== "alle" || dateFilter
+                  ? "Filter oder Suche anpassen."
+                  : "Plane deinen ersten Einsatz – per Sprache oder manuell."
+              }
+              actionLabel={
+                search || statusFilter !== "alle" || dateFilter ? undefined : "Termin erstellen"
+              }
+              onAction={
+                search || statusFilter !== "alle" || dateFilter ? undefined : openManualForm
+              }
+            />
           </div>
         ) : (
           sortedDates.map((date) => (

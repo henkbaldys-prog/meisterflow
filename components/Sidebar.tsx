@@ -18,6 +18,7 @@ import {
   X,
   Settings,
   Megaphone,
+  HardHat,
 } from "lucide-react";
 import { useMemo, useState } from "react";
 
@@ -27,6 +28,7 @@ const navItems = [
   { href: "/angebote", label: "Angebote", icon: FileText },
   { href: "/rechnungen", label: "Rechnungen", icon: Receipt },
   { href: "/termine", label: "Termine", icon: CalendarDays },
+  { href: "/team", label: "Team", icon: HardHat },
   { href: "/marketing", label: "Marketing", icon: Megaphone },
   { href: "/einstellungen", label: "Einstellungen", icon: Settings },
 ];
@@ -47,13 +49,12 @@ export default function Sidebar() {
 
   return (
     <>
-      {/* Mobile Hamburger */}
       <button
         onClick={() => setMobileOpen(true)}
-        className="md:hidden fixed top-4 left-4 z-50 p-2 bg-dark-900 border border-dark-800 rounded-lg text-dark-300 hover:text-white"
+        className="md:hidden fixed top-4 left-4 z-50 flex h-12 w-12 items-center justify-center rounded-btn border border-white/[0.06] bg-dark-900 text-dark-300 hover:text-white"
         aria-label="Menü öffnen"
       >
-        <Menu className="w-6 h-6" />
+        <Menu className="h-5 w-5" strokeWidth={1.75} />
         {openFollowUps > 0 && (
           <span className="absolute -right-1 -top-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-brand-500 px-1 text-[10px] font-bold text-white">
             {openFollowUps > 9 ? "9+" : openFollowUps}
@@ -61,24 +62,20 @@ export default function Sidebar() {
         )}
       </button>
 
-      {/* Mobile Backdrop */}
       {mobileOpen && (
         <div
-          className="md:hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+          className="md:hidden fixed inset-0 z-40 bg-black/70 backdrop-blur-[8px]"
           onClick={closeMobile}
         />
       )}
 
       <aside
-        className={`fixed left-0 top-0 h-screen bg-dark-900 border-r border-dark-800 flex flex-col transition-all duration-300 z-40 ${
-          collapsed ? "w-16" : "w-64"
-        } ${
-          mobileOpen ? "translate-x-0" : "-translate-x-full"
-        } md:translate-x-0`}
+        className={`fixed left-0 top-0 z-40 flex h-screen flex-col border-r border-white/[0.06] bg-dark-900/95 backdrop-blur-xl transition-all duration-300 ${
+          collapsed ? "w-[72px]" : "w-[240px]"
+        } ${mobileOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}
       >
-        {/* Logo */}
-        <div className="h-16 flex items-center justify-between px-3 border-b border-dark-800">
-          <Link href="/dashboard" className="flex items-center min-w-0" onClick={closeMobile}>
+        <div className="flex h-16 items-center justify-between border-b border-white/[0.06] px-3">
+          <Link href="/dashboard" className="flex min-w-0 items-center" onClick={closeMobile}>
             {collapsed ? (
               <MeisterFlowLogo iconOnly size="xs" />
             ) : (
@@ -87,17 +84,16 @@ export default function Sidebar() {
           </Link>
           <button
             onClick={closeMobile}
-            className="md:hidden p-1 text-dark-500 hover:text-white"
+            className="modal-close md:hidden static"
             aria-label="Menü schließen"
           >
-            <X className="w-5 h-5" />
+            <X className="h-4 w-4" />
           </button>
         </div>
 
-        {/* Navigation */}
-        <nav className="flex-1 py-4 px-2 space-y-1">
+        <nav className="flex-1 space-y-1 px-2 py-4">
           {navItems.map((item) => {
-            const isActive = pathname === item.href;
+            const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
             const Icon = item.icon;
             const showBadge = item.href === "/dashboard" && openFollowUps > 0;
             return (
@@ -105,24 +101,24 @@ export default function Sidebar() {
                 key={item.href}
                 href={item.href}
                 onClick={closeMobile}
-                className={`flex items-center gap-3 px-3 py-3 md:py-2.5 min-h-[48px] md:min-h-0 rounded-lg transition-all ${
+                className={`flex min-h-[48px] items-center gap-3 rounded-btn px-3 py-2.5 transition-all ${
                   isActive
-                    ? "bg-brand-600/10 text-brand-400 border border-brand-500/20"
-                    : "text-dark-400 hover:bg-dark-800 hover:text-dark-200"
+                    ? "bg-brand-500/10 text-brand-400"
+                    : "text-dark-400 hover:bg-white/[0.03] hover:text-white"
                 }`}
                 title={collapsed ? item.label : undefined}
               >
                 <span className="relative shrink-0">
-                  <Icon className="w-5 h-5" />
+                  <Icon className="h-5 w-5" strokeWidth={1.75} />
                   {showBadge && collapsed && (
                     <span className="absolute -right-1.5 -top-1.5 h-2 w-2 rounded-full bg-brand-500" />
                   )}
                 </span>
                 {!collapsed && (
                   <>
-                    <span className="text-sm font-medium flex-1">{item.label}</span>
+                    <span className="flex-1 text-sm font-medium">{item.label}</span>
                     {showBadge && (
-                      <span className="rounded-full bg-brand-500/20 px-2 py-0.5 text-[11px] font-semibold text-brand-300">
+                      <span className="rounded-md bg-brand-500/15 px-2 py-0.5 text-[11px] font-semibold text-brand-300">
                         {openFollowUps}
                       </span>
                     )}
@@ -133,18 +129,17 @@ export default function Sidebar() {
           })}
         </nav>
 
-        {/* Bottom */}
-        <div className="p-2 border-t border-dark-800 space-y-1">
+        <div className="space-y-1 border-t border-white/[0.06] p-2">
           <button
             onClick={() => setCollapsed(!collapsed)}
-            className="hidden md:flex items-center gap-3 px-3 py-2.5 rounded-lg text-dark-500 hover:bg-dark-800 hover:text-dark-300 transition-all w-full min-h-[48px] md:min-h-0"
+            className="btn-ghost hidden w-full justify-start min-h-[44px] md:flex"
           >
             {collapsed ? (
-              <ChevronRight className="w-5 h-5 shrink-0" />
+              <ChevronRight className="h-5 w-5 shrink-0" strokeWidth={1.75} />
             ) : (
               <>
-                <ChevronLeft className="w-5 h-5 shrink-0" />
-                <span className="text-sm">Einklappen</span>
+                <ChevronLeft className="h-5 w-5 shrink-0" strokeWidth={1.75} />
+                <span>Einklappen</span>
               </>
             )}
           </button>
@@ -153,10 +148,10 @@ export default function Sidebar() {
               closeMobile();
               signOut();
             }}
-            className="flex items-center gap-3 px-3 py-3 md:py-2.5 min-h-[48px] md:min-h-0 rounded-lg text-dark-500 hover:bg-red-500/10 hover:text-red-400 transition-all w-full"
+            className="flex min-h-[48px] w-full items-center gap-3 rounded-btn px-3 py-2.5 text-dark-400 transition-all hover:bg-danger/10 hover:text-danger"
           >
-            <LogOut className="w-5 h-5 shrink-0" />
-            {!collapsed && <span className="text-sm">Abmelden</span>}
+            <LogOut className="h-5 w-5 shrink-0" strokeWidth={1.75} />
+            {!collapsed && <span className="text-sm font-medium">Abmelden</span>}
           </button>
         </div>
       </aside>

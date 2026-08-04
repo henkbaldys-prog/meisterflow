@@ -7,7 +7,12 @@ import StatusBadge from "@/components/StatusBadge";
 import AngebotGelesenStatus from "@/components/AngebotGelesenStatus";
 import FollowUpDashboardCard from "@/components/FollowUpDashboardCard";
 import MahnungDashboardCard from "@/components/MahnungDashboardCard";
+import WebsiteAnfragenCard from "@/components/WebsiteAnfragenCard";
+import VerlustAnalyseCard from "@/components/VerlustAnalyseCard";
+import UmsatzPrognoseCard from "@/components/UmsatzPrognoseCard";
 import KollegenEinladen from "@/components/KollegenEinladen";
+import { DashboardSkeleton } from "@/components/Skeleton";
+import EmptyState from "@/components/EmptyState";
 import {
   Users,
   FileText,
@@ -146,15 +151,11 @@ export default function DashboardPage() {
   const displayName = firmenprofil?.firmenname && !profilUnvollstaendig ? firmenprofil.firmenname : null;
 
   if (loading) {
-    return (
-      <div className="flex h-96 items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-brand-500" />
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   return (
-    <div className="space-y-8">
+    <div className="section-gap page-enter">
       <div>
         <h1 className="text-2xl font-bold text-white md:text-3xl">
           {displayName ? `${greeting}, ${displayName}!` : `${greeting}!`}
@@ -173,6 +174,8 @@ export default function DashboardPage() {
 
       {/* Mahnungen zuerst – must-have, mobil prominent */}
       <MahnungDashboardCard />
+
+      <WebsiteAnfragenCard />
 
       <KollegenEinladen />
 
@@ -208,6 +211,11 @@ export default function DashboardPage() {
       )}
 
       <FollowUpDashboardCard followUps={followUps} />
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <VerlustAnalyseCard />
+        <UmsatzPrognoseCard />
+      </div>
 
       <div className="card border-brand-500/20 bg-brand-500/5">
         <div className="flex items-start gap-3">
@@ -295,7 +303,13 @@ export default function DashboardPage() {
           </div>
           <div className="space-y-3">
             {recentAngebote.length === 0 ? (
-              <p className="text-sm text-dark-500">Noch keine Angebote erstellt.</p>
+              <EmptyState
+                icon={FileText}
+                title="Noch keine Angebote"
+                description="Erstelle dein erstes Angebot per Sprache, Foto oder manuell."
+                actionLabel="Zu Angeboten"
+                href="/angebote"
+              />
             ) : (
               recentAngebote.map((angebot) => (
                 <div
@@ -335,7 +349,13 @@ export default function DashboardPage() {
           </div>
           <div className="space-y-3">
             {recentRechnungen.length === 0 ? (
-              <p className="text-sm text-dark-500">Noch keine Rechnungen erstellt.</p>
+              <EmptyState
+                icon={AlertCircle}
+                title="Noch keine Rechnungen"
+                description="Aus einem angenommenen Angebot wird die Rechnung mit einem Klick."
+                actionLabel="Zu Rechnungen"
+                href="/rechnungen"
+              />
             ) : (
               recentRechnungen.map((rechnung) => (
                 <div
@@ -371,7 +391,15 @@ export default function DashboardPage() {
         </div>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {upcomingTermine.length === 0 ? (
-            <p className="col-span-full text-sm text-dark-500">Keine anstehenden Termine.</p>
+            <div className="col-span-full">
+              <EmptyState
+                icon={CalendarDays}
+                title="Keine anstehenden Termine"
+                description="Plane deinen nächsten Einsatz – per Sprache oder manuell."
+                actionLabel="Zu Terminen"
+                href="/termine"
+              />
+            </div>
           ) : (
             upcomingTermine.map((termin) => (
               <div key={termin.id} className="rounded-lg border border-dark-700 bg-dark-900 p-4">

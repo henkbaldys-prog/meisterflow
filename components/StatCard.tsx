@@ -22,29 +22,40 @@ export default function StatCard({
   color = "brand",
 }: StatCardProps) {
   const colorMap: Record<string, string> = {
-    brand: "bg-brand-500/10 text-brand-400 border-brand-500/20",
-    blue: "bg-blue-500/10 text-blue-400 border-blue-500/20",
-    green: "bg-green-500/10 text-green-400 border-green-500/20",
-    yellow: "bg-yellow-500/10 text-yellow-400 border-yellow-500/20",
-    red: "bg-red-500/10 text-red-400 border-red-500/20",
-    purple: "bg-purple-500/10 text-purple-400 border-purple-500/20",
+    brand: "bg-brand-500/10 text-brand-400",
+    blue: "bg-brand-500/10 text-brand-400",
+    green: "bg-success/10 text-success",
+    yellow: "bg-warning/10 text-warning",
+    red: "bg-danger/10 text-danger",
+    purple: "bg-brand-500/10 text-brand-400",
+    accent: "bg-accent/10 text-accent",
   };
 
   return (
-    <div className="card">
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-sm text-dark-500 mb-1">{title}</p>
-          <p className="text-2xl font-bold text-white">{value}</p>
-          {subtitle && <p className="text-xs text-dark-500 mt-1">{subtitle}</p>}
+    <div className="card-interactive">
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <p className="text-[12px] font-medium uppercase tracking-wide text-dark-400 mb-2">
+            {title}
+          </p>
+          <p className="kpi text-2xl sm:text-3xl truncate">{value}</p>
+          {subtitle && <p className="text-xs text-dark-500 mt-2">{subtitle}</p>}
           {trend && (
-            <p className={`text-xs mt-1 font-medium ${trendUp ? "text-green-400" : "text-red-400"}`}>
+            <p
+              className={`text-xs mt-2 font-medium ${
+                trendUp ? "text-success" : "text-danger"
+              }`}
+            >
               {trendUp ? "↑" : "↓"} {trend}
             </p>
           )}
         </div>
-        <div className={`w-10 h-10 rounded-lg border flex items-center justify-center ${colorMap[color] || colorMap.brand}`}>
-          <Icon className="w-5 h-5" />
+        <div
+          className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-btn ${
+            colorMap[color] || colorMap.brand
+          }`}
+        >
+          <Icon className="h-5 w-5" strokeWidth={1.75} />
         </div>
       </div>
     </div>

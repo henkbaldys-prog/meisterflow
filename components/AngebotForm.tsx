@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useData } from "@/contexts/DataContext";
 import KIGenerator from "./KIGenerator";
+import PreisvorschlagHint from "./PreisvorschlagHint";
 import { X, Plus, FileText, Euro, Calendar, User, Phone } from "lucide-react";
 import { formatCurrency, generateAngebotsNummer, calculateBrutto } from "@/lib/utils";
 import { defaultGueltigBis, findKundeIdByName } from "@/lib/angebot-initial";
@@ -300,6 +301,13 @@ export default function AngebotForm({ onClose, onSuccess, initialData }: Angebot
               </div>
             </div>
           </div>
+
+          <PreisvorschlagHint
+            betreff={form.betreff}
+            beschreibung={form.beschreibung}
+            netto={form.netto}
+            onApply={(n) => setForm((prev) => ({ ...prev, netto: n }))}
+          />
 
           <div>
             <label className="label flex items-center gap-1.5">
