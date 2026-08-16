@@ -3,47 +3,43 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
-import { useData } from "@/contexts/DataContext";
 import MeisterFlowLogo from "@/components/MeisterFlowLogo";
 import {
   LayoutDashboard,
   Users,
   FileText,
-  Receipt,
-  CalendarDays,
   LogOut,
   ChevronLeft,
   ChevronRight,
   Menu,
   X,
   Settings,
-  Megaphone,
-  HardHat,
+  // Versteckt im Fokus-Modus (Code behalten):
+  // Receipt, CalendarDays, Megaphone, HardHat,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
+import { SHOW } from "@/lib/feature-flags";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/kunden", label: "Kunden", icon: Users },
   { href: "/angebote", label: "Angebote", icon: FileText },
-  { href: "/rechnungen", label: "Rechnungen", icon: Receipt },
-  { href: "/termine", label: "Termine", icon: CalendarDays },
-  { href: "/team", label: "Team", icon: HardHat },
-  { href: "/marketing", label: "Marketing", icon: Megaphone },
+  { href: "/kunden", label: "Kunden", icon: Users },
+  // Fokus: Rechnungen/Termine/Team/Marketing ausgeblendet
+  // { href: "/rechnungen", label: "Rechnungen", icon: Receipt, show: SHOW.sidebarRechnungen },
+  // { href: "/termine", label: "Termine", icon: CalendarDays, show: SHOW.sidebarTermine },
+  // { href: "/team", label: "Team", icon: HardHat, show: SHOW.sidebarTeam },
+  // { href: "/marketing", label: "Marketing", icon: Megaphone, show: SHOW.sidebarMarketing },
   { href: "/einstellungen", label: "Einstellungen", icon: Settings },
-];
+].filter((item) => (item as { show?: boolean }).show !== false);
+
+// Unused flag refs keep SHOW imports intentional for future toggle
+void SHOW;
 
 export default function Sidebar() {
   const pathname = usePathname();
   const { signOut } = useAuth();
-  const { followUps } = useData();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-
-  const openFollowUps = useMemo(
-    () => followUps.filter((f) => f.status === "offen").length,
-    [followUps],
-  );
 
   const closeMobile = () => setMobileOpen(false);
 
@@ -55,11 +51,6 @@ export default function Sidebar() {
         aria-label="Menü öffnen"
       >
         <Menu className="h-5 w-5" strokeWidth={1.75} />
-        {openFollowUps > 0 && (
-          <span className="absolute -right-1 -top-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-brand-500 px-1 text-[10px] font-bold text-white">
-            {openFollowUps > 9 ? "9+" : openFollowUps}
-          </span>
-        )}
       </button>
 
       {mobileOpen && (
@@ -95,7 +86,6 @@ export default function Sidebar() {
           {navItems.map((item) => {
             const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
             const Icon = item.icon;
-            const showBadge = item.href === "/dashboard" && openFollowUps > 0;
             return (
               <Link
                 key={item.href}
@@ -108,22 +98,8 @@ export default function Sidebar() {
                 }`}
                 title={collapsed ? item.label : undefined}
               >
-                <span className="relative shrink-0">
-                  <Icon className="h-5 w-5" strokeWidth={1.75} />
-                  {showBadge && collapsed && (
-                    <span className="absolute -right-1.5 -top-1.5 h-2 w-2 rounded-full bg-brand-500" />
-                  )}
-                </span>
-                {!collapsed && (
-                  <>
-                    <span className="flex-1 text-sm font-medium">{item.label}</span>
-                    {showBadge && (
-                      <span className="rounded-md bg-brand-500/15 px-2 py-0.5 text-[11px] font-semibold text-brand-300">
-                        {openFollowUps}
-                      </span>
-                    )}
-                  </>
-                )}
+                <Icon className="h-5 w-5 shrink-0" strokeWidth={1.75} />
+                {!collapsed && <span className="text-sm font-medium">{item.label}</span>}
               </Link>
             );
           })}

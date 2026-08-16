@@ -7,6 +7,8 @@ import FirmenprofilBanner from "@/components/FirmenprofilBanner";
 import { useEffect } from "react";
 import { DataProvider } from "@/contexts/DataContext";
 import OnboardingMailTrigger from "@/components/OnboardingMailTrigger";
+import OnboardingGate from "@/components/OnboardingGate";
+import AngebotFAB from "@/components/AngebotFAB";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -28,6 +30,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <DataProvider>
       <OnboardingMailTrigger />
+      <OnboardingGate />
       <div className="app-shell min-h-screen">
         <Sidebar />
         <main className="min-h-screen pt-16 md:ml-[240px] md:pt-0">
@@ -36,6 +39,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             {children}
           </div>
         </main>
+        <AngebotFAB />
       </div>
     </DataProvider>
   );

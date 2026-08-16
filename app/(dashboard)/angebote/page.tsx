@@ -186,10 +186,10 @@ export default function AngebotePage() {
             description={
               search || statusFilter !== "alle"
                 ? "Filter oder Suche anpassen."
-                : "Per Sprache, Foto oder manuell – in unter 30 Sekunden fertig."
+                : "Per Sprache oder Foto – in unter 2 Minuten fertig."
             }
-            actionLabel={search || statusFilter !== "alle" ? undefined : "Angebot erstellen"}
-            onAction={search || statusFilter !== "alle" ? undefined : openManualForm}
+            actionLabel={search || statusFilter !== "alle" ? undefined : "Erstes Angebot per Sprache"}
+            onAction={search || statusFilter !== "alle" ? undefined : () => setShowSprache(true)}
           />
         ) : (
           <div className="overflow-x-auto">

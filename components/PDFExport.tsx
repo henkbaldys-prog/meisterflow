@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { FileText, Download, Loader2 } from "lucide-react";
+import { FileText, Loader2 } from "lucide-react";
 import { getKundeName, formatKundeAdresse } from "@/lib/kunde-utils";
+import { useData } from "@/contexts/DataContext";
 import { Kunde } from "@/types";
 import toast from "react-hot-toast";
 
@@ -25,159 +26,215 @@ interface PDFExportProps {
 
 export default function PDFExport({ type, data }: PDFExportProps) {
   const [loading, setLoading] = useState(false);
+  const { firmenprofil } = useData();
 
   const generatePDF = async () => {
     setLoading(true);
     try {
-      // Dynamischer Import von jsPDF (Client-side only)
       const { jsPDF } = await import("jspdf");
       const doc = new jsPDF();
 
       const isAngebot = type === "angebot";
       const title = isAngebot ? "ANGEBOT" : "RECHNUNG";
-      const subTitle = isAngebot ? "Angebotsnummer" : "Rechnungsnummer";
-      const dateLabel = isAngebot ? "Gültig bis" : "Fällig am";
-      const dateValue = isAngebot ? data.gueltig_bis : data.faellig_am;
+      const primary: [number, number, number] = [99, 102, 241];
+      const dark: [number, number, number] = [15, 23, 42];
+      const gray: [number, number, number] = [100, 116, 139];
 
-      // Farben
-      const primaryColor: [number, number, number] = [37, 99, 235]; // brand-600
-      const darkColor: [number, number, number] = [15, 23, 42]; // dark-950
-      const grayColor: [number, number, number] = [100, 116, 139]; // dark-500
+      const firma = firmenprofil?.firmenname || "Handwerksbetrieb";
+      const inhaber = firmenprofil?.inhaber_name || "";
+      const strasse = firmenprofil?.strasse || "";
+      const plzOrt = [firmenprofil?.plz, firmenprofil?.ort].filter(Boolean).join(" ");
+      const telefon = firmenprofil?.telefon || "";
+      const email = firmenprofil?.email || "";
+      const steuernummer = firmenprofil?.steuernummer || "";
+      const ustId = firmenprofil?.ust_id || "";
+      const bank = firmenprofil?.bankverbindung || "";
+      const hinweis =
+        firmenprofil?.rechnungshinweis ||
+        "Bitte überweisen Sie den Betrag innerhalb der Zahlungsfrist.";
+      const zahlungsziel = firmenprofil?.zahlungsziel_tage ?? 14;
 
       // Header
-      doc.setFillColor(...primaryColor);
-      doc.rect(0, 0, 210, 35, "F");
-
+      doc.setFillColor(...primary);
+      doc.rect(0, 0, 210, 32, "F");
       doc.setTextColor(255, 255, 255);
-      doc.setFontSize(24);
+      doc.setFontSize(16);
       doc.setFont("helvetica", "bold");
-      doc.text("MeisterFlow", 15, 20);
-
-      doc.setFontSize(12);
+      doc.text(firma, 15, 14);
+      doc.setFontSize(9);
       doc.setFont("helvetica", "normal");
-      doc.text("Ihr Handwerksbetrieb", 15, 28);
+      const headerLine = [inhaber, strasse, plzOrt, telefon].filter(Boolean).join(" · ");
+      if (headerLine) doc.text(headerLine.slice(0, 95), 15, 22);
+      if (email) doc.text(email, 15, 28);
 
       // Titel
-      doc.setTextColor(...darkColor);
-      doc.setFontSize(28);
+      doc.setTextColor(...dark);
+      doc.setFontSize(22);
       doc.setFont("helvetica", "bold");
-      doc.text(title, 15, 55);
+      doc.text(title, 15, 48);
 
-      // Nummer und Datum
       doc.setFontSize(10);
       doc.setFont("helvetica", "normal");
-      doc.setTextColor(...grayColor);
-      doc.text(`${subTitle}: ${data.nummer}`, 15, 65);
-      doc.text(`Datum: ${new Date(data.created_at).toLocaleDateString("de-DE")}`, 15, 70);
-      if (dateValue) {
-        doc.text(`${dateLabel}: ${new Date(dateValue).toLocaleDateString("de-DE")}`, 15, 75);
+      doc.setTextColor(...gray);
+      const ausstellungsdatum = new Date(data.created_at).toLocaleDateString("de-DE");
+      doc.text(`${isAngebot ? "Angebotsnummer" : "Rechnungsnummer"}: ${data.nummer}`, 15, 56);
+      doc.text(`Ausstellungsdatum: ${ausstellungsdatum}`, 15, 61);
+      if (isAngebot && data.gueltig_bis) {
+        doc.text(`Gültig bis: ${new Date(data.gueltig_bis).toLocaleDateString("de-DE")}`, 15, 66);
+      }
+      if (!isAngebot && data.faellig_am) {
+        doc.text(`Zahlungsziel / Fällig am: ${new Date(data.faellig_am).toLocaleDateString("de-DE")}`, 15, 66);
+      } else if (!isAngebot) {
+        doc.text(`Zahlungsziel: ${zahlungsziel} Tage`, 15, 66);
       }
 
-      // Kunden-Daten
+      // Leistender (links) – Pflichtangabe
+      let y = 78;
+      doc.setFillColor(248, 250, 252);
+      doc.rect(15, y, 85, 42, "F");
+      doc.setTextColor(...dark);
+      doc.setFontSize(9);
+      doc.setFont("helvetica", "bold");
+      doc.text("Leistender (Absender):", 18, y + 7);
+      doc.setFont("helvetica", "normal");
+      doc.text(firma, 18, y + 14);
+      let ly = y + 19;
+      if (inhaber) {
+        doc.text(inhaber, 18, ly);
+        ly += 5;
+      }
+      if (strasse) {
+        doc.text(strasse, 18, ly);
+        ly += 5;
+      }
+      if (plzOrt) {
+        doc.text(plzOrt, 18, ly);
+        ly += 5;
+      }
+      if (steuernummer) doc.text(`Steuernr.: ${steuernummer}`, 18, Math.min(ly, y + 38));
+      if (ustId) doc.text(`USt-IdNr.: ${ustId}`, 18, Math.min(ly + (steuernummer ? 5 : 0), y + 38));
+
+      // Empfänger
+      doc.setFillColor(248, 250, 252);
+      doc.rect(110, y, 85, 42, "F");
+      doc.setFont("helvetica", "bold");
+      doc.text("Leistungsempfänger:", 113, y + 7);
+      doc.setFont("helvetica", "normal");
       if (data.kunde) {
-        doc.setFillColor(248, 250, 252);
-        doc.rect(120, 50, 75, 35, "F");
-        doc.setTextColor(...darkColor);
-        doc.setFontSize(10);
-        doc.setFont("helvetica", "bold");
-        doc.text("Kunde:", 125, 58);
-        doc.setFont("helvetica", "normal");
-        doc.text(getKundeName(data.kunde), 125, 64);
+        doc.text(getKundeName(data.kunde), 113, y + 14);
+        let ry = y + 19;
         if (data.kunde.firma && data.kunde.firma !== data.kunde.ansprechpartner) {
-          doc.text(data.kunde.firma, 125, 69);
+          doc.text(data.kunde.firma, 113, ry);
+          ry += 5;
         }
-        const adresse = formatKundeAdresse(data.kunde);
-        if (adresse) {
-          doc.text(adresse, 125, data.kunde.firma && data.kunde.firma !== data.kunde.ansprechpartner ? 74 : 69);
+        if (data.kunde.strasse) {
+          doc.text(data.kunde.strasse, 113, ry);
+          ry += 5;
         }
+        const ka = [data.kunde.plz, data.kunde.ort].filter(Boolean).join(" ");
+        if (ka) doc.text(ka, 113, ry);
+      } else {
+        doc.text("—", 113, y + 14);
       }
 
-      // Trennlinie
-      doc.setDrawColor(...primaryColor);
-      doc.setLineWidth(0.5);
-      doc.line(15, 90, 195, 90);
+      y = 128;
+      doc.setDrawColor(...primary);
+      doc.setLineWidth(0.4);
+      doc.line(15, y, 195, y);
 
-      // Betreff
-      doc.setTextColor(...darkColor);
-      doc.setFontSize(12);
+      y += 10;
+      doc.setTextColor(...dark);
       doc.setFont("helvetica", "bold");
-      doc.text("Betreff:", 15, 100);
+      doc.setFontSize(11);
+      doc.text("Leistungsbeschreibung", 15, y);
+      y += 7;
       doc.setFont("helvetica", "normal");
-      doc.text(data.betreff, 15, 107);
-
+      doc.setFontSize(10);
+      doc.text(`Betreff: ${data.betreff}`, 15, y);
+      y += 6;
       const description = data.beschreibung ?? data.betreff;
-
-      // Beschreibung
-      doc.setFontSize(10);
-      doc.setTextColor(...grayColor);
       const splitDesc = doc.splitTextToSize(description, 180);
-      doc.text(splitDesc, 15, 118);
+      doc.setTextColor(...gray);
+      doc.text(splitDesc, 15, y);
+      y += splitDesc.length * 5 + 8;
 
-      // Positionen-Tabelle
-      const tableY = 140 + (splitDesc.length * 5);
-
-      // Tabellen-Header
-      doc.setFillColor(...primaryColor);
-      doc.rect(15, tableY, 180, 10, "F");
+      // Menge/Art Tabelle (§14 UStG)
+      doc.setFillColor(...primary);
+      doc.rect(15, y, 180, 9, "F");
       doc.setTextColor(255, 255, 255);
-      doc.setFontSize(10);
       doc.setFont("helvetica", "bold");
-      doc.text("Pos.", 20, tableY + 7);
-      doc.text("Beschreibung", 40, tableY + 7);
-      doc.text("Netto", 140, tableY + 7);
-      doc.text("MwSt.", 165, tableY + 7);
-
-      // Tabellen-Zeile
+      doc.setFontSize(9);
+      doc.text("Pos.", 18, y + 6);
+      doc.text("Menge / Art der Leistung", 32, y + 6);
+      doc.text("Netto", 150, y + 6);
+      doc.text("USt.", 175, y + 6);
+      y += 9;
       doc.setFillColor(248, 250, 252);
-      doc.rect(15, tableY + 10, 180, 10, "F");
-      doc.setTextColor(...darkColor);
+      doc.rect(15, y, 180, 10, "F");
+      doc.setTextColor(...dark);
       doc.setFont("helvetica", "normal");
-      doc.text("1", 20, tableY + 17);
-      const shortDesc = description.length > 40 
-        ? description.substring(0, 40) + "..." 
-        : description;
-      doc.text(shortDesc, 40, tableY + 17);
-      doc.text(`${data.netto.toFixed(2)} €`, 140, tableY + 17);
-      doc.text(`${data.mwst_satz}%`, 165, tableY + 17);
+      doc.text("1", 18, y + 7);
+      const art = (data.betreff || "Handwerksleistung").slice(0, 55);
+      doc.text(`1 × ${art}`, 32, y + 7);
+      doc.text(`${data.netto.toFixed(2)} EUR`, 150, y + 7);
+      doc.text(`${data.mwst_satz}%`, 175, y + 7);
 
-      // Summen-Box
-      const sumY = tableY + 30;
+      y += 20;
+      const steuer = data.brutto - data.netto;
       doc.setFillColor(248, 250, 252);
-      doc.rect(120, sumY, 75, 35, "F");
-
-      doc.setTextColor(...grayColor);
+      doc.rect(115, y, 80, 32, "F");
       doc.setFontSize(10);
-      doc.text("Nettosumme:", 125, sumY + 8);
-      doc.text(`MwSt. (${data.mwst_satz}%):`, 125, sumY + 16);
-
-      doc.setTextColor(...darkColor);
+      doc.setTextColor(...gray);
+      doc.text("Nettobetrag:", 120, y + 8);
+      doc.text(`Umsatzsteuer (${data.mwst_satz}%):`, 120, y + 16);
       doc.setFont("helvetica", "bold");
-      doc.text("Gesamtbetrag:", 125, sumY + 28);
-
-      doc.setTextColor(...grayColor);
+      doc.setTextColor(...dark);
+      doc.text("Bruttobetrag:", 120, y + 26);
       doc.setFont("helvetica", "normal");
-      doc.text(`${data.netto.toFixed(2)} €`, 185, sumY + 8, { align: "right" });
-      doc.text(`${(data.brutto - data.netto).toFixed(2)} €`, 185, sumY + 16, { align: "right" });
-
-      doc.setTextColor(...primaryColor);
+      doc.setTextColor(...gray);
+      doc.text(`${data.netto.toFixed(2)} EUR`, 190, y + 8, { align: "right" });
+      doc.text(`${steuer.toFixed(2)} EUR`, 190, y + 16, { align: "right" });
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(12);
-      doc.text(`${data.brutto.toFixed(2)} €`, 185, sumY + 28, { align: "right" });
+      doc.setTextColor(...primary);
+      doc.text(`${data.brutto.toFixed(2)} EUR`, 190, y + 26, { align: "right" });
+
+      y += 40;
+      if (!isAngebot) {
+        doc.setTextColor(...dark);
+        doc.setFontSize(9);
+        doc.setFont("helvetica", "bold");
+        doc.text("Zahlungsinformationen", 15, y);
+        y += 6;
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(...gray);
+        const payLines = doc.splitTextToSize(hinweis, 180);
+        doc.text(payLines, 15, y);
+        y += payLines.length * 4 + 4;
+        if (bank) {
+          doc.text(`Bankverbindung: ${bank}`, 15, y);
+          y += 6;
+        }
+        doc.setFontSize(8);
+        doc.setTextColor(...primary);
+        doc.text("Rechnung erstellt nach GoBD-Richtlinien / § 14 UStG.", 15, y);
+        y += 8;
+      }
 
       // Footer
-      doc.setDrawColor(...grayColor);
-      doc.setLineWidth(0.3);
-      doc.line(15, 270, 195, 270);
-
-      doc.setTextColor(...grayColor);
-      doc.setFontSize(8);
+      doc.setDrawColor(...gray);
+      doc.setLineWidth(0.2);
+      doc.line(15, 275, 195, 275);
+      doc.setTextColor(...gray);
+      doc.setFontSize(7);
       doc.setFont("helvetica", "normal");
-      doc.text("MeisterFlow - Automatisierung für Handwerker", 15, 278);
-      doc.text("Dieses Dokument wurde automatisch generiert.", 15, 283);
+      const footerBits = [firma, steuernummer ? `St.-Nr. ${steuernummer}` : "", ustId ? `USt-Id ${ustId}` : ""]
+        .filter(Boolean)
+        .join(" · ");
+      doc.text(footerBits || "MeisterFlow", 15, 280);
+      doc.text("Erstellt mit MeisterFlow", 195, 280, { align: "right" });
 
-      // Speichern
       doc.save(`${title}_${data.nummer}.pdf`);
-      toast.success("PDF erfolgreich erstellt!");
+      toast.success("PDF erstellt");
     } catch (error) {
       console.error(error);
       toast.error("Fehler beim Erstellen des PDFs");
@@ -190,14 +247,10 @@ export default function PDFExport({ type, data }: PDFExportProps) {
     <button
       onClick={generatePDF}
       disabled={loading}
-      className="p-2 text-dark-500 hover:text-brand-400 hover:bg-brand-500/10 rounded-lg transition-colors"
+      className="p-2 text-dark-500 hover:text-brand-400 hover:bg-brand-500/10 rounded-lg transition-colors min-h-[44px] min-w-[44px] inline-flex items-center justify-center"
       title="Als PDF exportieren"
     >
-      {loading ? (
-        <Loader2 className="w-4 h-4 animate-spin" />
-      ) : (
-        <FileText className="w-4 h-4" />
-      )}
+      {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
     </button>
   );
 }

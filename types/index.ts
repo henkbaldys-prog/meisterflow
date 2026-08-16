@@ -102,6 +102,14 @@ export interface Firmenprofil {
   zahlungsziel_tage: number;
   standard_angebotstext: string;
   standard_mahnungstext: string;
+  /** Ansprechpartner / Inhaber */
+  inhaber_name?: string | null;
+  steuernummer?: string | null;
+  ust_id?: string | null;
+  rechnungsnummer_prefix?: string | null;
+  naechste_rechnungsnummer?: number | null;
+  bankverbindung?: string | null;
+  rechnungshinweis?: string | null;
   created_at: string;
   updated_at: string;
 }

@@ -59,7 +59,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const profilUnvollstaendig = useMemo(
-    () => !firmenprofil || firmenprofil.firmenname === "Mein Betrieb",
+    () =>
+      !firmenprofil ||
+      firmenprofil.firmenname === "Mein Betrieb" ||
+      !firmenprofil.steuernummer,
     [firmenprofil],
   );
 
