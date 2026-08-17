@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
-import { cookies } from "next/headers";
+import { createClient } from "@/lib/supabase/server";
 import { checkRateLimit } from "@/lib/rate-limit";
 import {
   normalizePublicEmail,
@@ -14,7 +13,7 @@ const rateLimits: Record<string, { count: number; resetAt: number }> = {};
  * KI-Lead-Recherche – nur öffentliche Daten, KEIN Auto-Versand.
  */
 export async function POST(req: NextRequest) {
-  const supabase = createRouteHandlerClient({ cookies });
+  const supabase = createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

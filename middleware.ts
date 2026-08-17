@@ -1,14 +1,15 @@
-import { createMiddlewareClient } from "@supabase/auth-helpers-nextjs";
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
+import { type NextRequest } from "next/server";
+import { updateSession } from "@/lib/supabase/middleware";
 
 export async function middleware(request: NextRequest) {
-  const response = NextResponse.next();
-  const supabase = createMiddlewareClient({ req: request, res: response });
-  await supabase.auth.getSession();
-  return response;
+  return updateSession(request);
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  matcher: [
+    /*
+     * Alle Routen außer Static Assets – Session bei jedem Request refreshen.
+     */
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+  ],
 };

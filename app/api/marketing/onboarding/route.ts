@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
-import { cookies } from "next/headers";
+import { createClient } from "@/lib/supabase/server";
 import { Resend } from "resend";
 import {
   getOnboardingMail,
@@ -13,7 +12,7 @@ import {
  * Status in user_metadata – keine neue Tabelle nötig.
  */
 export async function POST() {
-  const supabase = createRouteHandlerClient({ cookies });
+  const supabase = createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

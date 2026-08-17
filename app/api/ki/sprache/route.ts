@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
-import { cookies } from "next/headers";
+import { createClient } from "@/lib/supabase/server";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { extractSpracheAngebot, extractSpracheTermin, transcribeAudio } from "@/lib/openai";
 
@@ -10,7 +9,7 @@ const MAX_AUDIO_BYTES = 10 * 1024 * 1024;
 const MIN_AUDIO_BYTES = 1000;
 
 export async function POST(req: NextRequest) {
-  const supabase = createRouteHandlerClient({ cookies });
+  const supabase = createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

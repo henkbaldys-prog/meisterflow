@@ -8,7 +8,7 @@ import MeisterFlowLogo from "@/components/MeisterFlowLogo";
 import toast from "react-hot-toast";
 
 export default function LandingPage() {
-  const { signIn, signUp, user } = useAuth();
+  const { signIn, signUp, user, loading } = useAuth();
   const router = useRouter();
   const [showAuth, setShowAuth] = useState(false);
   const [isLogin, setIsLogin] = useState(false);
@@ -16,6 +16,15 @@ export default function LandingPage() {
   const [password, setPassword] = useState("");
   const [mobileOpen, setMobileOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+
+  // Session aus Cookies wiederherstellen – nicht vor loading flashen
+  if (loading) {
+    return (
+      <div className="app-shell flex min-h-screen items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent" />
+      </div>
+    );
+  }
 
   if (user) {
     router.push("/dashboard");

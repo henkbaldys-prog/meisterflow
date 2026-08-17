@@ -1,8 +1,9 @@
 "use client";
 
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
+import { createClient } from "@/lib/supabase/client";
 
-export const supabase = createClientComponentClient();
+/** Browser-Supabase-Client (Cookie-Session). Bestehende Imports bleiben gültig. */
+export const supabase = createClient();
 
 export type Database = {
   public: {
