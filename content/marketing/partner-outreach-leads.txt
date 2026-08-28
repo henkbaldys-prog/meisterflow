@@ -1,0 +1,10 @@
+Hasan Toptas;Toptas Gebäudetechnik;Stuttgart-Stammheim;info@toptas-hls.de
+Thomas Pfister;Thomas Pfister Heizung & Sanitär e.K.;Stuttgart-Stammheim;info@pfister-stuttgart.de
+Yasin Uslu;Bayar Sanitär und Heizung GmbH;Stuttgart;info@sanitaer-bayar.de
+Matthias Merkle;Merkle Sanitär GmbH;Stuttgart;info@merkle-sanitaer.de
+Matthias Merkle;Sanitär Heizung Merkle GmbH;Neuhausen;info@merkle-internet.de
+Dr. Matthias von Bodecker;Zillmer Elektrotechnik GmbH;Hamburg;info@zillmer-elektrotechnik.de
+;Elektro Witt;Hamburg;service@e-witt.de
+;Scheer Elektrotechnik GmbH;Hamburg;info@scheer-elektro.de
+;ELFAELEKTRO Meisterbetrieb;Hamburg;info@elfaelektro.de
+;Krieg Bad & Heizung;Stuttgart;info@krieg-haustechnik.de
