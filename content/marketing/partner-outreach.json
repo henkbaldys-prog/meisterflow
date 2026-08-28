@@ -1,0 +1,137 @@
+{
+  "campaign": "partner-suche-ki-telefonassistent",
+  "from": "Henk Baldys <henkbaldys@icloud.com>",
+  "replyTo": "henkbaldys@icloud.com",
+  "sendRules": {
+    "delayMinutesBetween": 2,
+    "noCcBcc": true,
+    "followUpAfterDays": 5,
+    "maxWordsPerEmail": 120
+  },
+  "emails": [
+    {
+      "id": 1,
+      "status": "pending",
+      "to": "info@toptas-hls.de",
+      "contactName": "Hasan Toptas",
+      "firma": "Toptas Gebäudetechnik",
+      "stadt": "Stuttgart-Stammheim",
+      "branche": "Sanitär, Heizung, Lüftung",
+      "website": "toptas-hls.de",
+      "subject": "Hasan, ich suche keinen Kunden – ich suche einen Partner",
+      "body": "Hallo Hasan,\n\nich bin Henk, Gründer von MeisterFlow – einem KI-Telefonassistenten für Handwerker. Ich habe gerade toptas-hls.de gesehen und merke: Sie verstehen Ihr Handwerk.\n\nHier ist meine ehrliche Situation: Ich habe die Technik gebaut, aber ich bin kein Handwerker. Ich suche jemanden wie Sie – einen erfahrenen SHK-Meister – der mit mir MeisterFlow groß macht. Sie gestalten das Produkt nach Ihren Vorstellungen, bringen Ihr Netzwerk ein und testen es bei Ihren Kontakten.\n\nKein Geld von Ihnen verlangt. Stattdessen: 10% am Umsatz, den Sie mit Ihrem Netzwerk generieren.\n\nNur ein unverbindliches Gespräch. Interesse?\n\nHenk Baldys\nhenkbaldys@icloud.com"
+    },
+    {
+      "id": 2,
+      "status": "pending",
+      "to": "info@pfister-stuttgart.de",
+      "contactName": "Thomas Pfister",
+      "firma": "Thomas Pfister Heizung & Sanitär e.K.",
+      "stadt": "Stuttgart-Stammheim",
+      "branche": "Heizung, Sanitär",
+      "website": "pfister-stuttgart.de",
+      "subject": "Thomas, ich brauche Ihre Erfahrung – nicht Ihr Geld",
+      "body": "Hallo Thomas,\n\nich bin Henk Baldys, Gründer von MeisterFlow. Ich habe gerade pfister-stuttgart.de gesehen – ein sauberer Meisterbetrieb. Respekt.\n\nIch habe ein Problem: Ich habe eine KI für Handwerker gebaut, aber ich bin keiner. Ich verstehe die Baustelle nicht wie Sie. Deshalb suche ich keinen Kunden – ich suche einen Partner. Jemanden, der mir sagt, was Handwerker wirklich brauchen.\n\nIhre Rolle: Mitgestalten, testen, Ihr Netzwerk einbringen. Kein Euro von Ihnen. Dafür 10% am Umsatz, den wir gemeinsam machen.\n\nEin kurzes Gespräch – unverbindlich. Was meinen Sie?\n\nHenk Baldys\nhenkbaldys@icloud.com"
+    },
+    {
+      "id": 3,
+      "status": "pending",
+      "to": "info@sanitaer-bayar.de",
+      "contactName": "Yasin Uslu",
+      "firma": "Bayar Sanitär und Heizung GmbH",
+      "stadt": "Stuttgart",
+      "branche": "Sanitär, Heizung",
+      "website": "sanitaer-bayar.de",
+      "subject": "Yasin, ich suche einen SHK-Partner mit Vision",
+      "body": "Hallo Yasin,\n\nsanitaer-bayar.de zeigt: Sie denken professionell. Genau das brauche ich.\n\nIch bin Henk, Gründer von MeisterFlow – einem KI-Telefonassistenten für Handwerker. Die Technik läuft, aber ich suche jemanden aus der Branche, der mit mir das Produkt auf die nächste Stufe hebt.\n\nKein Verkaufsgespräch. Ich suche einen Partner: Sie bringen Ihr SHK-Know-how und Ihr Netzwerk, ich bringe die Technik. Gemeinsam gestalten wir MeisterFlow so, dass es wirklich passt. Sie verdienen 10% am Umsatz – ohne eigenes Kapital.\n\nNur ein unverbindliches Gespräch. Wann passt es Ihnen?\n\nHenk Baldys\nhenkbaldys@icloud.com"
+    },
+    {
+      "id": 4,
+      "status": "pending",
+      "to": "info@merkle-sanitaer.de",
+      "contactName": "Matthias Merkle",
+      "firma": "Merkle Sanitär GmbH",
+      "stadt": "Stuttgart",
+      "branche": "Sanitär",
+      "website": "merkle-sanitaer.de",
+      "subject": "Matthias, Ihre Branchen-Erfahrung ist mehr wert als Geld",
+      "body": "Hallo Matthias,\n\nIch bin Henk Baldys, Gründer von MeisterFlow. Ich habe merkle-sanitaer.de gesehen – ein solider Familienbetrieb. Das ist genau die DNA, die ich suche.\n\nIch habe eine KI für Handwerker gebaut, aber ich brauche jemanden, der die Branche von innen kennt. Nicht als Kunden – als Partner. Jemanden, der sagt: „So macht das für Handwerker Sinn.“\n\nSie gestalten mit, testen bei Ihren Kontakten, bringen Ihr Netzwerk ein. Kein Geld von Ihnen. Dafür 10% am Umsatz, den wir gemeinsam generieren.\n\nEin kurzes, unverbindliches Gespräch. Interesse?\n\nHenk Baldys\nhenkbaldys@icloud.com"
+    },
+    {
+      "id": 5,
+      "status": "pending",
+      "to": "info@merkle-internet.de",
+      "contactName": "Matthias Merkle",
+      "firma": "Sanitär Heizung Merkle GmbH",
+      "stadt": "Neuhausen",
+      "branche": "Sanitär, Heizung",
+      "website": "merkle-internet.de",
+      "subject": "Matthias, Ihr zweiter Standort zeigt: Sie wachsen – ich auch",
+      "body": "Hallo Matthias,\n\nIch habe gesehen, dass Sie mit merkle-internet.de einen zweiten Standort betreiben. Das zeigt: Sie verstehen, wie man ein Handwerksbusiness skaliert.\n\nIch bin Henk, Gründer von MeisterFlow. Ich suche keinen Kunden – ich suche einen Wachstumspartner. Jemanden, der mit mir MeisterFlow in der SHK-Branche etabliert. Sie bringen Ihre Erfahrung aus zwei Standorten, ich bringe die KI-Technologie.\n\nKein Eigenkapital nötig. Kein Risiko. Stattdessen: 10% am Umsatz, den wir gemeinsam machen. Sie gestalten das Produkt, ich baue es.\n\nNur ein unverbindliches Gespräch. Wann passt es?\n\nHenk Baldys\nhenkbaldys@icloud.com"
+    },
+    {
+      "id": 6,
+      "status": "pending",
+      "to": "info@zillmer-elektrotechnik.de",
+      "contactName": "Dr. Matthias von Bodecker",
+      "firma": "Zillmer Elektrotechnik GmbH",
+      "stadt": "Hamburg",
+      "branche": "Elektrotechnik",
+      "website": "zillmer-elektrotechnik.de",
+      "subject": "Dr. von Bodecker, ich suche einen Partner mit technischem Anspruch",
+      "body": "Hallo Dr. von Bodecker,\n\nzillmer-elektrotechnik.de zeigt: Sie verstehen Elektrotechnik auf höchstem Niveau. Als promovierter Geschäftsführer sind Sie vermutlich auch offen für Innovationen – aber nur, wenn sie Sinn machen.\n\nIch bin Henk, Gründer von MeisterFlow. Ich habe eine KI für Handwerker gebaut, aber ich suche keinen Kunden. Ich suche einen Partner mit technischem Anspruch, der mit mir das Produkt auf ein neues Level hebt.\n\nSie bringen Ihr Elektro-Know-how und Ihr Netzwerk, ich bringe die KI. Gemeinsam gestalten wir MeisterFlow so, dass es wirklich für Elektrobetriebe funktioniert. 10% am Umsatz – ohne Ihr Kapital.\n\nEin unverbindliches Gespräch. Wann passt es Ihnen?\n\nHenk Baldys\nhenkbaldys@icloud.com"
+    },
+    {
+      "id": 7,
+      "status": "pending",
+      "to": "service@e-witt.de",
+      "contactName": "",
+      "firma": "Elektro Witt",
+      "stadt": "Hamburg",
+      "branche": "Elektro",
+      "website": "e-witt.de",
+      "subject": "Ich suche keinen Kunden – ich suche einen Elektro-Partner",
+      "body": "Hallo,\n\ne-witt.de zeigt: Service ist Ihre DNA. Genau das brauche ich.\n\nIch bin Henk Baldys, Gründer von MeisterFlow – einem KI-Telefonassistenten für Handwerker. Ich habe die Technik gebaut, aber ich bin kein Elektriker. Ich verstehe nicht, was Ihre Kunden wirklich am Telefon fragen.\n\nDeshalb suche ich keinen Kunden. Ich suche einen Partner: Einen erfahrenen Elektro-Handwerker, der mit mir MeisterFlow für die Elektrobranche gestaltet. Sie testen es, geben Feedback, bringen Ihr Netzwerk ein.\n\nKein Geld von Ihnen. Dafür 10% am Umsatz, den wir gemeinsam generieren.\n\nNur ein kurzes, unverbindliches Gespräch. Interesse?\n\nHenk Baldys\nhenkbaldys@icloud.com"
+    },
+    {
+      "id": 8,
+      "status": "pending",
+      "to": "info@scheer-elektro.de",
+      "contactName": "",
+      "firma": "Scheer Elektrotechnik GmbH",
+      "stadt": "Hamburg",
+      "branche": "Elektrotechnik",
+      "website": "scheer-elektro.de",
+      "subject": "Ich suche einen Elektro-Partner, keinen Käufer",
+      "body": "Hallo,\n\nscheer-elektro.de macht einen professionellen Eindruck. Als GmbH wissen Sie: Wachstum braucht die richtigen Partner.\n\nIch bin Henk, Gründer von MeisterFlow. Ich habe eine KI für Handwerker gebaut, aber ich suche keinen Kunden. Ich suche einen Elektro-Partner, der mit mir das Produkt für die Elektrobranche perfektioniert.\n\nSie bringen Ihr Branchenwissen, Ihr Netzwerk und Ihre Erfahrung. Ich bringe die Technik. Gemeinsam gestalten wir MeisterFlow so, dass es wirklich für Elektrobetriebe funktioniert. Sie verdienen 10% am Umsatz – ohne eigenes Kapital.\n\nKein Verkauf. Nur ein unverbindliches Gespräch. Wann passt es?\n\nHenk Baldys\nhenkbaldys@icloud.com"
+    },
+    {
+      "id": 9,
+      "status": "pending",
+      "to": "info@elfaelektro.de",
+      "contactName": "",
+      "firma": "ELFAELEKTRO Meisterbetrieb",
+      "stadt": "Hamburg",
+      "branche": "Elektro",
+      "website": "elfaelektro.de",
+      "subject": "Als Meister wissen Sie: Das richtige Werkzeug macht den Unterschied",
+      "body": "Hallo,\n\nelfaelektro.de zeigt: Sie sind ein Meisterbetrieb mit hohen Ansprüchen. Genau die Mentalität, die ich suche.\n\nIch bin Henk Baldys, Gründer von MeisterFlow. Ich habe eine KI für Handwerker gebaut, aber ich brauche jemanden, der die Branche von innen kennt. Nicht als Kunden – als Partner.\n\nSie sagen mir, was ein Meisterbetrieb wirklich braucht. Sie testen es bei Ihren Kontakten. Sie bringen Ihr Netzwerk ein. Ich baue es um. Kein Geld von Ihnen – dafür 10% am Umsatz, den wir gemeinsam machen.\n\nNur ein unverbindliches Gespräch. Interesse?\n\nHenk Baldys\nhenkbaldys@icloud.com"
+    },
+    {
+      "id": 10,
+      "status": "pending",
+      "to": "info@krieg-haustechnik.de",
+      "contactName": "",
+      "firma": "Krieg Bad & Heizung",
+      "stadt": "Stuttgart",
+      "branche": "Bad, Heizung",
+      "website": "krieg-haustechnik.de",
+      "subject": "Ihre Bad-Expertise + meine KI = gemeinsames Produkt",
+      "body": "Hallo,\n\nkrieg-haustechnik.de zeigt beeindruckende Bad-Referenzen. Das ist ein echtes Alleinstellungsmerkmal.\n\nIch bin Henk, Gründer von MeisterFlow. Ich habe eine KI für Handwerker gebaut, aber ich suche keinen Kunden. Ich suche einen SHK-Partner, der mit mir das Produkt für die Bad- und Heizungsbranche perfektioniert.\n\nSie bringen Ihr Branchenwissen, Ihre Bad-Expertise und Ihr Netzwerk. Ich bringe die Technik. Gemeinsam gestalten wir MeisterFlow so, dass es wirklich für SHK-Betriebe mit Bad-Fokus funktioniert. 10% am Umsatz – ohne Ihr Kapital.\n\nKein Verkauf. Nur ein unverbindliches Gespräch. Wann passt es Ihnen?\n\nHenk Baldys\nhenkbaldys@icloud.com"
+    }
+  ],
+  "followUpTemplate": {
+    "subjectPrefix": "Nachfrage: ",
+    "body": "Hallo {name},\n\nich wollte nur kurz nachfragen, ob meine E-Mail von letzter Woche bei Ihnen angekommen ist. Ich weiß, dass Sie viel um die Ohren haben.\n\nFalls Interesse besteht: Ich bin diese Woche noch für einen kurzen 10-Minuten-Call verfügbar – unverbindlich, nur zum Kennenlernen. Ansonsten wünsche ich Ihnen eine erfolgreiche Woche.\n\nBeste Grüße\nHenk Baldys\nMeisterFlow\nhenkbaldys@icloud.com"
+  }
+}
